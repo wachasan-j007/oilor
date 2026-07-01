@@ -173,19 +173,37 @@ tbody tr:hover td{background:#f8fafc}
     </div>
   </nav>
 
-  <section class="hero">
-    <div>
-      <div class="stamp">Excel Source: oil_prices_all.xlsx</div>
-      <h1>OR Retail Price Dashboard</h1>
-      <p>ดึงข้อมูลจากไฟล์ Excel ในโปรเจกต์นี้โดยตรง เพื่อวิเคราะห์ราคาน้ำมันตามภูมิภาค จังหวัด อำเภอ และผลิตภัณฑ์</p>
+<section class="hero">
+  <div>
+
+    <div class="stamp" id="excelName">
+      Excel Source : or 2569.xlsx
     </div>
-    <div>
-      <div class="stamp">Status</div>
-      <strong id="loadStatus">Loading...</strong>
-    </div>
-  </section>
+
+    <h1>OR Retail Price Dashboard</h1>
+
+    <p>ดึงข้อมูลจากไฟล์ Excel ในโปรเจกต์นี้โดยตรง เพื่อวิเคราะห์ราคาน้ำมันตามภูมิภาค จังหวัด อำเภอ และผลิตภัณฑ์</p>
+
+  </div>
+
+  <div>
+
+    <div class="stamp">Status</div>
+
+    <strong id="loadStatus">Loading...</strong>
+
+  </div>
+</section>
 
   <section class="filters" aria-label="Dashboard filters">
+        <div class="field">
+        <label for="yearFilter">Year</label>
+        <select id="yearFilter">
+            <option value="2567">2567</option>
+            <option value="2568">2568</option>
+            <option value="2569" selected>2569</option>
+        </select>
+    </div>
     <div class="field">
       <label for="companyFilter">Company</label>
       <select id="companyFilter"><option value="OR">OR</option></select>
@@ -295,7 +313,7 @@ tbody tr:hover td{background:#f8fafc}
 <script src="mapdata.js"></script>
 <script src="countrymap.js" onload="document.documentElement.classList.add('simplemap-loaded')" onerror="document.documentElement.classList.add('simplemap-missing')"></script>
 <script>
-const EXCEL_PATH = "oil_prices_all.xlsx";
+let EXCEL_PATH = "data/or 2569.xlsx";
 const regions = ["North","Northeast","Central","East","South"];
 const regionLabels = {North:"North",Northeast:"Northeast",Central:"Central",East:"East",South:"South"};
 if(window.simplemaps_countrymap_mapdata){
@@ -339,6 +357,7 @@ const dataTable = document.getElementById("dataTable");
 const selectedArea = document.getElementById("selectedArea");
 const topDistrict = document.getElementById("topDistrict");
 const lowDistrict = document.getElementById("lowDistrict");
+const yearFilter = document.getElementById("yearFilter");
 
 function optionList(select, items, allLabel){
   const currentValue = select.value;
@@ -402,13 +421,15 @@ function updateDependentFilters(changed){
 }
 
 async function loadExcelData(){
+  allData=[];
+
   try{
     loadStatus.textContent = "Loading Excel...";
     const response = await fetch(EXCEL_PATH);
     if(!response.ok) throw new Error(`Cannot load ${EXCEL_PATH}`);
     const buffer = await response.arrayBuffer();
     const workbook = XLSX.read(buffer,{type:"array",cellDates:false});
-    const sheetName = workbook.SheetNames.includes("รวมทั้งหมด") ? "รวมทั้งหมด" : workbook.SheetNames[0];
+    const sheetName = workbook.SheetNames[0];
     const sheet = workbook.Sheets[sheetName];
     const rows = XLSX.utils.sheet_to_json(sheet,{header:1,defval:""});
 
@@ -428,7 +449,6 @@ async function loadExcelData(){
     optionList(regionFilter, regions, "All Regions");
     updateDependentFilters();
     loadStatus.textContent = `${allData.length.toLocaleString()} rows`;
-    bindEvents();
     updateDashboard();
   }catch(error){
     console.error(error);
@@ -438,25 +458,47 @@ async function loadExcelData(){
 }
 
 function bindEvents(){
+
   regionFilter.addEventListener("change",()=>{
     updateDependentFilters("region");
     updateDashboard();
   });
+
   provinceFilter.addEventListener("change",()=>{
-    if(provinceFilter.value) regionFilter.value = provinceRegion[provinceFilter.value] || "";
+    if(provinceFilter.value)
+      regionFilter.value = provinceRegion[provinceFilter.value] || "";
+
     updateDependentFilters("province");
     updateDashboard();
   });
+
   districtFilter.addEventListener("change",updateDashboard);
+
   fuelFilter.addEventListener("change",updateDashboard);
+
   metricFilter.addEventListener("change",updateDashboard);
+
   document.querySelectorAll(".region").forEach(path=>{
     path.addEventListener("click",()=>{
-      regionFilter.value = path.dataset.region === regionFilter.value ? "" : path.dataset.region;
+      regionFilter.value =
+        path.dataset.region === regionFilter.value ? "" : path.dataset.region;
+
       updateDependentFilters("region");
       updateDashboard();
     });
   });
+
+yearFilter.addEventListener("change",()=>{
+
+    EXCEL_PATH = `data/or ${yearFilter.value}.xlsx`;
+
+    document.getElementById("excelName").textContent =
+        `Excel Source : ${yearFilter.value}.xlsx`;
+
+    loadExcelData();
+
+});
+
 }
 
 function setupSimpleMapClicks(){
@@ -604,6 +646,7 @@ optionList(provinceFilter, [], "Loading provinces...");
 optionList(districtFilter, [], "Loading districts...");
 optionList(fuelFilter, [], "Loading products...");
 setupSimpleMapClicks();
+bindEvents();
 loadExcelData();
 </script>
 </body>
