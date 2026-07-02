@@ -67,12 +67,23 @@ h1{font-size:clamp(30px,6vw,64px);line-height:1.05;margin:10px 0 12px}
   box-shadow:0 28px 64px -34px rgba(14,165,233,1);
 }
 .logo{
-  width:76px;height:76px;border-radius:18px;
-  display:flex;align-items:center;justify-content:center;
-  background:var(--brand);
-  color:#fff;font-weight:800;font-size:25px;
-  letter-spacing:.3px;
-  box-shadow:0 18px 32px -20px var(--brand);
+  width:240px;
+  height:240px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.logo img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  filter:drop-shadow(0 10px 20px rgba(0,0,0,.25));
+  transition:.3s;
+}
+
+.logo:hover img{
+  transform:scale(1.08);
 }
 .company-card h2{font-size:34px;margin:24px 0 10px}
 .company-card p{margin:0;color:var(--muted);font-size:15px;line-height:1.7}
@@ -96,16 +107,15 @@ h1{font-size:clamp(30px,6vw,64px);line-height:1.05;margin:10px 0 12px}
 
   <section class="hero">
     <div class="eyebrow">Retail Operator</div>
-    <h1>OR</h1>
     <p>ตอนนี้โฟกัสเฉพาะข้อมูล OR จากไฟล์ oil_prices_all.xlsx ก่อน เพื่อให้ dashboard ใช้ข้อมูลชุดเดียวชัด ๆ และลดความสับสนจากบริษัทอื่น</p>
   </section>
 
   <section class="grid" aria-label="OR company card">
     <a class="company-card" href="dashboard.html?company=OR">
       <div>
-        <div class="logo">OR</div>
+        <div class="logo"> <img src="picture/or-logo-sm.png" alt="OR Logo"> </div>
         <h2>OR</h2>
-        <p>เครือข่าย PTT Station และข้อมูลราคาน้ำมันขายปลีกที่ดึงจากไฟล์ Excel ในโปรเจกต์นี้</p>
+        <p>เครือข่าย OR Station และข้อมูลราคาน้ำมันขายปลีกที่ดึงจากไฟล์ Excel ในโปรเจกต์นี้</p>
       </div>
       <div>
         <div class="metric"><span>Data source</span><strong>Excel</strong></div>
