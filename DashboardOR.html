@@ -1,0 +1,1675 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PTTOR Insight Dashboard | ราคาขายปลีกน้ำมัน สนพ.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@200;300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{
+  --blue-950:#04122b; --blue-900:#0a1e42; --blue-800:#0e2a5e; --blue-700:#123a7e;
+  --blue-600:#1a4fa3; --blue-500:#2563c9; --blue-400:#4f86e0; --blue-300:#8db2ee;
+  --blue-100:#eaf1fc;
+  --bg:#f2f6fc; --surface:rgba(255,255,255,.72); --surface-solid:#ffffff;
+  --text:#0e2038; --text-dim:#5b7291; --border:rgba(20,50,100,.10);
+  --up:#e0483e; --down:#1ea672; --neutral:#8a97a8;
+  --radius:16px; --shadow: 0 8px 30px rgba(15,40,90,.08);
+}
+html[data-theme="dark"]{
+  --bg:#060c1a; --surface:rgba(20,32,58,.6); --surface-solid:#101b33;
+  --text:#eaf1fc; --text-dim:#8fa2c0; --border:rgba(140,170,220,.12);
+  --shadow: 0 8px 30px rgba(0,0,0,.4);
+  --blue-100:#132446;
+}
+*{box-sizing:border-box; margin:0; padding:0;}
+body.senior-mode{font-size:18px !important;}
+body.senior-mode .topbar{padding:16px 22px;}
+body.senior-mode .topbar .title{font-size:22px;}
+body.senior-mode .filterbar label{font-size:16px;}
+body.senior-mode .filterbar select,
+body.senior-mode .filterbar input{font-size:16px; padding:10px 12px;}
+body.senior-mode .filterbar .reset-btn{font-size:15px; padding:10px 16px;}
+body.senior-mode .card h3{font-size:18px;}
+body.senior-mode .card h3 .hint{font-size:14px;}
+body.senior-mode .kpi-card .label{font-size:14px;}
+body.senior-mode .kpi-card .value{font-size:22px;}
+body.senior-mode .kpi-card .sub{font-size:13px;}
+body.senior-mode .chip{font-size:15px; padding:8px 14px;}
+body.senior-mode .badge{font-size:13px; padding:4px 10px;}
+body.senior-mode .district-row{font-size:15px; padding:10px 12px;}
+body.senior-mode .sidebar .sb-head h4{font-size:18px;}
+body.senior-mode #searchResults div{font-size:16px; padding:12px;}
+body.senior-mode .echart.tall{height:760px !important;}
+body.senior-mode .echart.map-xl{height:960px !important;}
+body{
+  font-family:'Kanit',sans-serif; background:var(--bg); color:var(--text);
+  transition:background .3s, color .3s; min-height:100vh;
+}
+body::before{
+  content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+  background:
+    radial-gradient(circle at 10% 0%, var(--blue-100), transparent 45%),
+    radial-gradient(circle at 90% 10%, var(--blue-100), transparent 40%);
+  opacity:.7;
+}
+::-webkit-scrollbar{width:8px; height:8px;}
+::-webkit-scrollbar-thumb{background:var(--blue-300); border-radius:8px;}
+
+/* ---------- Top bar ---------- */
+.topbar{
+  position:sticky; top:0; z-index:50; display:flex; align-items:center; gap:16px;
+  padding:12px 22px; background:var(--surface); backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+}
+.brand{display:flex; align-items:center; gap:10px; font-weight:600; font-size:17px; white-space:nowrap;}
+.brand .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(135deg,var(--blue-500),var(--blue-300)); box-shadow:0 0 12px var(--blue-400);}
+.brand .logo-mark{flex-shrink:0;}
+.brand small{display:block; font-weight:300; font-size:11px; color:var(--text-dim);}
+.tabs{display:flex; gap:4px; overflow-x:auto; flex:1;}
+.tab-btn{
+  border:none; background:transparent; color:var(--text-dim); font-family:inherit;
+  font-size:13.5px; padding:8px 14px; border-radius:10px; cursor:pointer; white-space:nowrap;
+  transition:all .2s;
+}
+.tab-btn:hover{background:var(--blue-100); color:var(--text);}
+.tab-btn.active{background:var(--blue-600); color:#fff; font-weight:500;}
+.topbar-actions{display:flex; align-items:center; gap:8px;}
+.icon-btn{
+  width:36px; height:36px; border-radius:10px; border:1px solid var(--border); background:var(--surface-solid);
+  color:var(--text); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:15px;
+}
+.icon-btn:hover{background:var(--blue-100);}
+.page-nav{display:flex; align-items:center; gap:8px; white-space:nowrap;}
+.page-nav a{
+  display:inline-flex; align-items:center; gap:6px; text-decoration:none;
+  border:1px solid var(--border); background:var(--surface-solid); color:var(--text-dim);
+  font-size:12.5px; font-weight:500; padding:7px 14px; border-radius:20px; transition:all .2s;
+}
+.page-nav a:hover{background:var(--blue-100); color:var(--text); border-color:var(--blue-300);}
+
+/* ---------- Filter bar ---------- */
+.filterbar{
+  display:flex; flex-wrap:wrap; gap:8px; align-items:center; padding:10px 22px;
+  background:var(--surface); border-bottom:1px solid var(--border); position:sticky; top:57px; z-index:40;
+  backdrop-filter:blur(16px);
+}
+.filterbar select, .filterbar input{
+  font-family:inherit; font-size:12.5px; padding:7px 10px; border-radius:9px; border:1px solid var(--border);
+  background:var(--surface-solid); color:var(--text); outline:none; min-width:100px;
+}
+.filterbar label{font-size:11px; color:var(--text-dim); display:flex; flex-direction:column; gap:3px;}
+.search-wrap{position:relative;}
+.search-results{
+  position:absolute; top:100%; left:0; margin-top:4px; width:220px; max-height:220px; overflow:auto;
+  background:var(--surface-solid); border:1px solid var(--border); border-radius:10px; box-shadow:var(--shadow);
+  z-index:60; display:none;
+}
+.search-results div{padding:7px 12px; font-size:12.5px; cursor:pointer;}
+.search-results div:hover{background:var(--blue-100);}
+.chip{
+  font-size:11px; padding:6px 12px; border-radius:20px; border:1px solid var(--blue-500); color:var(--blue-500);
+  background:transparent; cursor:pointer; font-family:inherit;
+}
+.chip.active{background:var(--blue-600); color:#fff; border-color:var(--blue-600);}
+.reset-btn{margin-left:auto; font-size:12px; color:var(--text-dim); background:none; border:none; cursor:pointer; text-decoration:underline;}
+
+/* ---------- Layout ---------- */
+.page{display:none; padding:18px 22px 60px;}
+.page.active{display:block; animation:fadeIn .35s ease;}
+@keyframes fadeIn{from{opacity:0; transform:translateY(6px);} to{opacity:1; transform:translateY(0);}}
+
+.kpi-row{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:10px; margin-bottom:16px;}
+.kpi-card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px;
+  backdrop-filter:blur(10px); box-shadow:var(--shadow); position:relative; overflow:hidden;
+}
+.kpi-card .label{font-size:11px; color:var(--text-dim); margin-bottom:6px;}
+.kpi-card .value{font-size:21px; font-weight:600; line-height:1.15;}
+.kpi-card .sub{font-size:10.5px; color:var(--text-dim); margin-top:4px;}
+.kpi-card.accent{border-color:var(--blue-400);}
+
+.grid-2{display:grid; grid-template-columns:7fr 3fr; gap:14px;}
+.grid-3{display:grid; grid-template-columns:repeat(3,1fr); gap:14px;}
+@media(max-width:980px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px;
+  backdrop-filter:blur(10px); box-shadow:var(--shadow); margin-bottom:14px;
+}
+.card h3{font-size:14.5px; font-weight:500; margin-bottom:10px; display:flex; align-items:center; justify-content:space-between;}
+.card h3 .hint{font-size:11px; color:var(--text-dim); font-weight:300;}
+.echart{width:100%; height:420px;}
+.echart.tall{height:640px;}
+.echart.map-xl{height:860px;}
+#page-overview .grid-2{align-items:start;}
+.echart.short{height:280px;}
+
+.layer-switch{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;}
+#sidebar{
+  position:fixed; top:0; right:-380px; width:360px; height:100%; background:var(--surface-solid);
+  border-left:1px solid var(--border); box-shadow:-10px 0 30px rgba(0,0,0,.15); z-index:100;
+  transition:right .35s ease; overflow-y:auto; padding:18px;
+}
+#sidebar.open{right:0;}
+#sidebar .close-btn{float:right; cursor:pointer; font-size:20px; color:var(--text-dim);}
+.district-row{display:flex; justify-content:space-between; padding:7px 0; border-bottom:1px dashed var(--border); font-size:12.5px;}
+.badge{padding:2px 8px; border-radius:20px; font-size:10.5px; font-weight:500;}
+.badge.up{background:rgba(224,72,62,.12); color:var(--up);}
+.badge.down{background:rgba(30,166,114,.12); color:var(--down);}
+.badge.flat{background:rgba(138,151,168,.12); color:var(--neutral);}
+.badge.diffpos{background:rgba(224,72,62,.12); color:var(--up);}
+.badge.diffneg{background:rgba(30,166,114,.12); color:var(--down);}
+.badge.compliant{background:rgba(30,166,114,.12); color:var(--down);}
+
+table.data-table{width:100%; border-collapse:collapse; font-size:12.5px;}
+table.data-table th{
+  text-align:left; padding:8px 10px; color:var(--text-dim); font-weight:500; border-bottom:1px solid var(--border);
+  position:sticky; top:0; background:var(--surface-solid);
+}
+table.data-table td{padding:7px 10px; border-bottom:1px solid var(--border);}
+table.data-table tbody tr:hover{background:var(--blue-100);}
+.table-wrap{max-height:420px; overflow:auto; border-radius:10px;}
+
+.insight-item{
+  display:flex; gap:10px; padding:10px 12px; border-radius:12px; background:var(--blue-100); margin-bottom:8px;
+  font-size:13px; align-items:flex-start;
+}
+.insight-item .ic{font-size:16px;}
+.small-btn{
+  font-size:11.5px; padding:6px 12px; border-radius:8px; border:1px solid var(--border); background:var(--surface-solid);
+  color:var(--text); cursor:pointer;
+}
+.small-btn:hover{background:var(--blue-100);}
+.loading-overlay{
+  position:fixed; inset:0; background:var(--bg); z-index:200; display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:14px;
+}
+.spinner{width:44px; height:44px; border-radius:50%; border:4px solid var(--blue-100); border-top-color:var(--blue-500); animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.footer-note{text-align:center; font-size:11px; color:var(--text-dim); margin-top:24px;}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <div id="loadingText" style="font-size:13px;color:var(--text-dim)">กำลังโหลดข้อมูลราคาน้ำมัน...</div>
+</div>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="logo-mark">
+      <img src="assets/picture/or-logo-sm.png" alt="OR Logo" style="height:36px; width:auto;">
+    </div>
+    <div>PTTOR Dashboard<br><small>Retail Fuel Price Dashboard · สนพ.</small></div>
+  </div>
+  <div class="page-nav">
+    <a href="index.html">Value Chain</a>
+    <a href="Companies.html">บริษัทที่เกี่ยวข้อง</a>
+  </div>
+  <div class="tabs" id="tabs">
+    <button class="tab-btn active" data-page="overview">ภาพรวม/แผนที่</button>
+    <button class="tab-btn" data-page="trend">แนวโน้มราคา</button>
+    <button class="tab-btn" data-page="transport">วิเคราะห์ค่าขนส่ง</button>
+    <button class="tab-btn" data-page="ranking">จัดอันดับจังหวัด</button>
+    <button class="tab-btn" data-page="compare">เปรียบเทียบจังหวัด</button>
+  </div>
+  <div class="topbar-actions">
+    <button class="icon-btn" id="themeToggle" title="สลับโหมดสี">🌙</button>
+    <button class="icon-btn" id="seniorToggle" title="โหมดผู้สูงอายุ (ขนาดตัวอักษรใหญ่)">🔍</button>
+    <button class="icon-btn" id="refreshData" title="โหลดข้อมูลใหม่จาก Excel (ล้างแคช)">↻</button>
+    <button class="icon-btn" id="exportCsv" title="Export CSV">⬇</button>
+  </div>
+</div>
+
+<div class="filterbar">
+  <label>ผลิตภัณฑ์<select id="fProduct"></select></label>
+  <label>วัน<select id="fDay"></select></label>
+  <label>เดือน<select id="fMonth"></select></label>
+  <label>ปี<select id="fYear"></select></label>
+  <label>ภาค<select id="fRegion"><option value="">ทั้งหมด</option></select></label>
+  <label>จังหวัด<select id="fProvince"><option value="">ทั้งหมด</option></select></label>
+  <label>อำเภอ<select id="fDistrict"><option value="">ทั้งหมด</option></select></label>
+  <div class="search-wrap">
+    <label>ค้นหาจังหวัด/อำเภอ<input id="fSearch" placeholder="พิมพ์ชื่อ..." autocomplete="off"></label>
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <button class="reset-btn" id="resetFilters">ล้างตัวกรอง</button>
+</div>
+
+<!-- ============ PAGE: OVERVIEW / MAP ============ -->
+<div class="page active" id="page-overview">
+  <div class="kpi-row" id="kpiRow"></div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>แผนที่ราคาขายปลีกน้ำมันรายจังหวัด <span class="hint">คลิกจังหวัดเพื่อดูอำเภอ · กรอบทอง = จังหวัดที่เลือกอยู่</span></h3>
+      <div class="layer-switch" id="mapColorSwitch">
+        <button class="chip active" data-mode="diff">แบ่งสีตามส่วนต่างราคา</button>
+        <button class="chip" data-mode="region">แบ่งสีตามภูมิภาค</button>
+      </div>
+      <div id="mapChart" class="echart map-xl"></div>
+    </div>
+    <div class="card">
+      <h3>Top 5 / Bottom 5 จังหวัด</h3>
+      <div id="topBottomChart" class="echart" style="height:250px"></div>
+      <h3 style="margin-top:14px">สัดส่วนตามภาค</h3>
+      <div id="regionPie" class="echart" style="height:250px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PAGE: TREND ============ -->
+<div class="page" id="page-trend">
+  <div class="card">
+    <h3>แนวโน้มราคารายเดือน ทุกผลิตภัณฑ์ <span class="hint">ค่าเฉลี่ยทั่วประเทศรายเดือน แยกเส้นครบทุกชนิดน้ำมัน</span></h3>
+    <div id="productMonthlyTrend" class="echart tall"></div>
+  </div>
+  <div class="card">
+    <h3>การเปลี่ยนแปลงราคาเดือนต่อเดือน <span class="hint">สีแดง = ราคาขึ้น · สีเขียว = ราคาลง · ยิ่งยาวยิ่งเปลี่ยนมาก</span></h3>
+    <div id="momChart" class="echart tall"></div>
+  </div>
+  <div class="card">
+    <h3>แนวโน้มราคาย้อนหลัง <span class="hint">เลือกได้หลายจังหวัด/อำเภอเพื่อเปรียบเทียบ</span></h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <select id="trendProvA"></select>
+      <select id="trendProvB"></select>
+      <select id="trendProvC"></select>
+      <button class="small-btn" id="trendExportPng">Export PNG</button>
+    </div>
+    <div id="trendChart" class="echart tall"></div>
+  </div>
+</div>
+
+<!-- ============ PAGE: TRANSPORT ============ -->
+<div class="page" id="page-transport">
+  <div class="card">
+    <h3>Heatmap: สัดส่วนอำเภอที่ไม่ตรงตามราคาอ้างอิง สนพ. (ตามภาค x ผลิตภัณฑ์) <span class="hint">สีเข้ม/แดง = พบอำเภอไม่ตรงตามสนพ.เยอะ · สีอ่อน = ตรงเกือบทั้งหมด · ช่องเทา = ไม่มีข้อมูลผลิตภัณฑ์นี้ในตัวกรอง</span></h3>
+    <div id="transportHeatmap" class="echart tall"></div>
+  </div>
+  <div class="card">
+    <h3>จังหวัดผิดปกติ (Outlier: ค่าขนส่งสูง-ราคาต่ำ หรือ ค่าขนส่งต่ำ-ราคาสูง) <span class="hint">ค่าความคลาดเคลื่อน = ส่วนต่างเฉลี่ยที่พบ (ปลายทาง−ต้นทาง) ลบด้วยค่าขนส่ง สนพ. ที่ควรจะเป็น · ถ้าราคาปลายทาง=ต้นทางเป๊ะ แต่ค่าขนส่ง สนพ. &gt; 0 จะติดลบ เพราะราคาที่ขายจริง "ไม่ได้บวกค่าขนส่งตามที่ควรจะเป็น" เท่ากับขายถูกกว่าที่ควร</span></h3>
+    <div style="margin-bottom:8px; display:flex; gap:14px; flex-wrap:wrap; align-items:center;">
+      <input type="text" id="outlierSearch" placeholder="พิมพ์ค้นหา จังหวัด / อำเภอ / ผลิตภัณฑ์..." style="flex:1; min-width:220px; max-width:340px; padding:7px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-solid); color:var(--text); font-size:12.5px;">
+      <label style="display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text-dim); cursor:pointer;">
+        <input type="checkbox" id="outlierShowAll"> แสดงทั้งหมด (รวมอำเภอที่ตรงตามสนพ.)
+      </label>
+    </div>
+    <div class="table-wrap"><table class="data-table" id="outlierTable"></table></div>
+  </div>
+</div>
+
+<!-- ============ PAGE: RANKING ============ -->
+<div class="page" id="page-ranking">
+  <div class="card">
+    <h3>Top 20 จังหวัดแพงสุด</h3>
+    <div id="rankTop" class="echart"></div>
+  </div>
+  <div class="card">
+    <h3>Bottom 20 จังหวัดถูกสุด</h3>
+    <div id="rankBottom" class="echart"></div>
+  </div>
+</div>
+
+<!-- ============ PAGE: COMPARE ============ -->
+<div class="page" id="page-compare">
+  <div class="card">
+    <h3>เปรียบเทียบจังหวัด <span class="hint">เลือก 2 จังหวัดเพื่อเทียบราคาเฉลี่ยแยกตามชนิดน้ำมัน ตามปีที่เลือกอยู่ในตัวกรอง เทียบกับราคากลาง สนพ.</span></h3>
+    <div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:10px;">
+      <select id="compareProvA"></select>
+      <select id="compareProvB"></select>
+    </div>
+    <div id="compareBar" class="echart tall"></div>
+  </div>
+</div>
+
+<div id="sidebar">
+  <span class="close-btn" id="sidebarClose">✕</span>
+  <h3 id="sbTitle" style="font-size:16px; margin-bottom:12px;"></h3>
+  <div id="sbBody"></div>
+</div>
+
+<div class="footer-note">PTTOR Dashboard </div>
+
+<script>
+const state = {
+  data:null, geo:null,
+  filterProduct:null, filterDateISO:null, filterYear:'', filterRegion:'', filterProvince:'', filterDistrictIdx:'',
+  theme:'light',
+  sidebarState:{type:null, key:null}
+};
+const fmt = n => n==null? '-' : n.toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const $ = id => document.getElementById(id);
+const THAI_MONTHS_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+const THAI_MONTHS_SHORT = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thDate(iso, mode='short'){
+  if(!iso) return '-';
+  const [y,m,dd] = iso.split('-').map(Number);
+  const be = y+543;
+  if(mode==='full') return `${dd} ${THAI_MONTHS_FULL[m-1]} ${be}`;
+  if(mode==='axis') return `${dd} ${THAI_MONTHS_SHORT[m-1]}`;
+  return `${dd} ${THAI_MONTHS_SHORT[m-1]} ${String(be).slice(2)}`;
+}
+function daysInMonth(yearCE, month){ return new Date(yearCE, month, 0).getDate(); }
+function buildISO(yearBE, month, day){
+  const yearCE = yearBE - 543;
+  const dim = daysInMonth(yearCE, month);
+  const dd = Math.min(day, dim);
+  return `${String(yearCE).padStart(4,'0')}-${String(month).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+}
+function addDaysISO(iso, k){
+  const dt = new Date(iso+'T00:00:00Z'); dt.setUTCDate(dt.getUTCDate()+k);
+  return dt.toISOString().slice(0,10);
+}
+// forward-filled continuous daily average across a set of district indices for a product
+function dailyForwardFillAvg(distIdxs, prodIdx){
+  const d = state.data;
+  if(!d.dates.length) return [];
+  const startISO = d.dates[0], endISO = d.dates[d.dates.length-1];
+  const events = distIdxs.map(di => (d._byDistProd[di+'-'+prodIdx]||[]).map(([dIdx,p])=>[d.dates[dIdx],p]));
+  const ptr = events.map(()=>0);
+  const cur = events.map(()=>null);
+  const result = [];
+  let day = new Date(startISO+'T00:00:00Z');
+  const end = new Date(endISO+'T00:00:00Z');
+  while(day <= end){
+    const iso = day.toISOString().slice(0,10);
+    for(let j=0;j<events.length;j++){
+      const ev = events[j];
+      while(ptr[j] < ev.length && ev[ptr[j]][0] <= iso){ cur[j] = ev[ptr[j]][1]; ptr[j]++; }
+    }
+    let sum=0, n=0;
+    for(let j=0;j<cur.length;j++){ if(cur[j]!=null){ sum+=cur[j]; n++; } }
+    if(n) result.push([iso, +(sum/n).toFixed(2)]);
+    day.setUTCDate(day.getUTCDate()+1);
+  }
+  return result;
+}
+function dailyForwardFillAvgAll(distIdxs){
+  const d = state.data;
+  if(!d.dates.length) return [];
+  const startISO = d.dates[0], endISO = d.dates[d.dates.length-1];
+  const nProds = d.products.length;
+  const events = distIdxs.map(di => {
+    return d.products.map((_,pi)=> (d._byDistProd[di+'-'+pi]||[]).map(([dIdx,p])=>[d.dates[dIdx],p]));
+  });
+  const ptr = distIdxs.map(()=> d.products.map(()=>0));
+  const cur = distIdxs.map(()=> d.products.map(()=>null));
+  const result = [];
+  let day = new Date(startISO+'T00:00:00Z');
+  const end = new Date(endISO+'T00:00:00Z');
+  while(day <= end){
+    const iso = day.toISOString().slice(0,10);
+    for(let j=0;j<distIdxs.length;j++){
+      for(let pi=0;pi<nProds;pi++){
+        const ev = events[j][pi];
+        while(ptr[j][pi] < ev.length && ev[ptr[j][pi]][0] <= iso){ cur[j][pi] = ev[ptr[j][pi]][1]; ptr[j][pi]++; }
+      }
+    }
+    let sum=0, n=0;
+    for(let j=0;j<distIdxs.length;j++){
+      for(let pi=0;pi<nProds;pi++){
+        if(cur[j][pi]!=null){ sum+=cur[j][pi]; n++; }
+      }
+    }
+    if(n) result.push([iso, +(sum/n).toFixed(2)]);
+    day.setUTCDate(day.getUTCDate()+1);
+  }
+  return result;
+}
+
+// ---------- THEME ----------
+$('themeToggle').onclick = ()=>{
+  state.theme = state.theme==='light' ? 'dark':'light';
+  document.documentElement.setAttribute('data-theme', state.theme);
+  $('themeToggle').textContent = state.theme==='light' ? '🌙':'☀️';
+  renderAll();
+};
+$('seniorToggle').onclick = ()=>{
+  document.body.classList.toggle('senior-mode');
+  const on = document.body.classList.contains('senior-mode');
+  $('seniorToggle').textContent = on ? '👁' : '🔍';
+  $('seniorToggle').title = on ? 'โหมดปกติ' : 'โหมดผู้สูงอายุ (ขนาดตัวอักษรใหญ่)';
+  setTimeout(()=>Object.values(charts).forEach(c=>c.resize()), 100);
+};
+
+// ---------- LOAD DATA ----------
+const charts = {};
+function getChart(id){
+  if(!charts[id]) charts[id] = echarts.init($(id), null, {renderer:'canvas'});
+  return charts[id];
+}
+window.addEventListener('resize', ()=>Object.values(charts).forEach(c=>c.resize()));
+
+// ---------- INDEXEDDB CACHE ----------
+const CACHE_DB = 'pttor-insight-cache', CACHE_STORE = 'kv', CACHE_KEY = 'or-dataset-v1';
+function idbOpen(){
+  return new Promise((res,rej)=>{
+    const req = indexedDB.open(CACHE_DB, 1);
+    req.onupgradeneeded = ()=> req.result.createObjectStore(CACHE_STORE);
+    req.onsuccess = ()=> res(req.result);
+    req.onerror = ()=> rej(req.error);
+  });
+}
+async function idbGet(key){
+  try{
+    const db = await idbOpen();
+    return await new Promise((res,rej)=>{
+      const tx = db.transaction(CACHE_STORE,'readonly');
+      const rq = tx.objectStore(CACHE_STORE).get(key);
+      rq.onsuccess = ()=>res(rq.result);
+      rq.onerror = ()=>rej(rq.error);
+    });
+  }catch(e){ return null; }
+}
+async function idbSet(key,val){
+  try{
+    const db = await idbOpen();
+    await new Promise((res,rej)=>{
+      const tx = db.transaction(CACHE_STORE,'readwrite');
+      tx.objectStore(CACHE_STORE).put(val, key);
+      tx.oncomplete = res; tx.onerror = ()=>rej(tx.error);
+    });
+  }catch(e){ /* cache best-effort only */ }
+}
+
+// ---------- EXCEL PARSING (ดึงข้อมูลตรงจากไฟล์ Excel ต้นฉบับ) ----------
+function toISO(dateStr){
+  // "09-01-2569 05:00" (พ.ศ.) -> "2026-01-09"
+  const [d] = dateStr.trim().split(' ');
+  const [dd, mm, yyBE] = d.split('-');
+  const yyCE = parseInt(yyBE, 10) - 543;
+  return `${String(yyCE).padStart(4,'0')}-${mm.padStart(2,'0')}-${dd.padStart(2,'0')}`;
+}
+async function fetchSheetRows(url){
+  $('loadingText').textContent = `กำลังอ่านไฟล์ ${url.split('/').pop()} ...`;
+  const buf = await fetch(url).then(r=>{
+    if(!r.ok) throw new Error('โหลดไฟล์ไม่สำเร็จ: '+url);
+    return r.arrayBuffer();
+  });
+  const wb = XLSX.read(buf, {type:'array'});
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  return XLSX.utils.sheet_to_json(ws, {header:1, raw:true, defval:null});
+}
+
+async function buildDatasetFromExcel(){
+  const datesIdx = {}, datesList = [];
+  const did = iso => (iso in datesIdx) ? datesIdx[iso] : (datesIdx[iso]=datesList.length, datesList.push(iso), datesIdx[iso]);
+  const provsIdx = {}, provsList = [];
+  const pid = p => (p in provsIdx) ? provsIdx[p] : (provsIdx[p]=provsList.length, provsList.push(p), provsIdx[p]);
+  const distsIdx = {}, distsList = [];
+  const xid = (prov,dist) => {
+    const key = prov+'|'+dist;
+    if(key in distsIdx) return distsIdx[key];
+    const i = distsList.length; distsList.push([pid(prov), dist]); distsIdx[key]=i; return i;
+  };
+  const prodsIdx = {}, prodsList = [];
+  const rid = p => (p in prodsIdx) ? prodsIdx[p] : (prodsIdx[p]=prodsList.length, prodsList.push(p), prodsIdx[p]);
+
+  const districtPrices = [];
+  for(const fn of ['pttor2567.xlsx','pttor2568.xlsx','pttor2569.xlsx']){
+    const rows = await fetchSheetRows('assets/data/'+fn);
+    for(let i=1;i<rows.length;i++){
+      const row = rows[i];
+      if(!row || row[0]==null) continue;
+      const [dateS, , , prov, dist, prod, price] = row;
+      districtPrices.push([did(toISO(String(dateS))), xid(prov,dist), rid(prod), Math.round(parseFloat(price)*100)/100]);
+    }
+  }
+
+  const bangkokPrices = [];
+  {
+    const rows = await fetchSheetRows('assets/data/pttorbangkok.xlsx');
+    for(let i=1;i<rows.length;i++){
+      const row = rows[i];
+      if(!row || row[0]==null) continue;
+      const [dateS, , , , prod, price] = row;
+      bangkokPrices.push([did(toISO(String(dateS))), rid(prod), Math.round(parseFloat(price)*100)/100]);
+    }
+  }
+
+  $('loadingText').textContent = 'กำลังโหลดค่าอ้างอิงค่าขนส่ง สนพ. ...';
+  const transportRaw = await fetch('assets/data/transport-cost-2549.json').then(r=>r.json());
+  const transportByXid = {};
+  const altIdx = {};
+  for(const key in distsIdx){
+    const [prov,dist] = key.split('|');
+    if(dist.startsWith('เมือง') && dist!=='เมือง') altIdx[prov+'|เมือง'] = distsIdx[key];
+  }
+  for(const key in transportRaw){
+    if(key in distsIdx) transportByXid[distsIdx[key]] = transportRaw[key];
+    else if(key in altIdx) transportByXid[altIdx[key]] = transportRaw[key];
+  }
+
+  return {
+    dates: datesList,
+    provinces: provsList,
+    districts: distsList,
+    products: prodsList,
+    district_prices: districtPrices,
+    bangkok_prices: bangkokPrices,
+    transport_cost: transportByXid
+  };
+}
+
+async function loadData(){
+  $('sidebar').classList.remove('open');
+  state.sidebarState = {type:null, key:null};
+  echarts.registerMap; // ensure echarts loaded
+  $('loadingText').textContent = 'กำลังโหลดแผนที่ประเทศไทย...';
+  const geo = await fetch('assets/data/thailand_th.geojson').then(r=>r.json());
+  state.geo = geo;
+  echarts.registerMap('thailand', geo);
+
+  let ds = await idbGet(CACHE_KEY);
+  if(!ds){
+    ds = await buildDatasetFromExcel();
+    // fix date ordering: dates were assigned indices in file-read order, not sorted.
+    // Re-sort dates and remap all dateIdx references consistently.
+    const order = ds.dates.map((iso,i)=>i).sort((a,b)=> ds.dates[a] < ds.dates[b] ? -1 : ds.dates[a] > ds.dates[b] ? 1 : 0);
+    const oldToNew = {}; order.forEach((oldIdx,newIdx)=> oldToNew[oldIdx]=newIdx);
+    ds.dates = order.map(i=>ds.dates[i]);
+    ds.district_prices.forEach(r=>{ r[0] = oldToNew[r[0]]; });
+    ds.bangkok_prices.forEach(r=>{ r[0] = oldToNew[r[0]]; });
+    $('loadingText').textContent = 'กำลังบันทึกแคช (IndexedDB) เพื่อโหลดครั้งถัดไปให้เร็วขึ้น...';
+    await idbSet(CACHE_KEY, ds);
+  }
+  state.data = ds;
+  buildIndices();
+  initFilters();
+  $('loadingOverlay').style.display='none';
+  renderAll();
+}
+
+// ---------- BUILD FAST LOOKUP INDICES ----------
+function buildIndices(){
+  const d = state.data;
+  // latest price per (distIdx,prodIdx) as of any dateIdx cutoff -> we build full sorted structure
+  d._byDistProd = {}; // key "d-p" -> array of [dateIdx, price] sorted by dateIdx
+  for(const [dateIdx, distIdx, prodIdx, price] of d.district_prices){
+    const k = distIdx+'-'+prodIdx;
+    (d._byDistProd[k] ||= []).push([dateIdx, price]);
+  }
+  Object.values(d._byDistProd).forEach(arr=>arr.sort((a,b)=>a[0]-b[0]));
+
+  d._bkkByProd = {}; // prodIdx -> [[dateIdx,price],...]
+  for(const [dateIdx, prodIdx, price] of d.bangkok_prices){
+    (d._bkkByProd[prodIdx] ||= []).push([dateIdx, price]);
+  }
+  Object.values(d._bkkByProd).forEach(arr=>arr.sort((a,b)=>a[0]-b[0]));
+
+  // province -> list of distIdx
+  d._provDists = {};
+  d.districts.forEach((dd,i)=>{ (d._provDists[dd[0]] ||= []).push(i); });
+
+  // จังหวัดที่ทุกอำเภอมีค่าขนส่ง สนพ. = 0 (เช่น กลุ่มปริมณฑลที่ใช้ราคาเดียวกับ กทม. โดยไม่มีค่าขนส่งเพิ่ม) — หาแบบอิงข้อมูลจริง ไม่ hardcode เฉพาะ กทม.
+  d._zeroTransportProvinces = new Set();
+  Object.entries(d._provDists).forEach(([provIdx, distIdxs])=>{
+    const known = distIdxs.filter(i=> d.transport_cost[i]!=null);
+    if(known.length && known.every(i=> d.transport_cost[i]===0)){
+      d._zeroTransportProvinces.add(d.provinces[+provIdx]);
+    }
+  });
+}
+// get price as-of ISO date cutoff (last known value <= cutoff, same year only — no carrying data from a different year)
+function priceAsOf(distIdx, prodIdx, cutoffISO){
+  const arr = state.data._byDistProd[distIdx+'-'+prodIdx];
+  if(!arr) return null;
+  const d = state.data;
+  const cutoffYear = cutoffISO.slice(0,4);
+  let val=null, valDateISO=null;
+  for(const [di,p] of arr){ if(d.dates[di]<=cutoffISO){ val=p; valDateISO=d.dates[di]; } else break; }
+  if(val==null) return null;
+  return valDateISO.slice(0,4)===cutoffYear ? val : null; // ผลิตภัณฑ์ไม่มีข้อมูลในปีนี้ = ไม่มี (0), ไม่เอาราคาปีอื่นมาแทน
+}
+function bkkAsOf(prodIdx, cutoffISO){
+  const arr = state.data._bkkByProd[prodIdx];
+  if(!arr) return null;
+  const d = state.data;
+  const cutoffYear = cutoffISO.slice(0,4);
+  let val=null, valDateISO=null;
+  for(const [di,p] of arr){ if(d.dates[di]<=cutoffISO){ val=p; valDateISO=d.dates[di]; } else break; }
+  if(val==null) return null;
+  return valDateISO.slice(0,4)===cutoffYear ? val : null;
+}
+function transportOf(distIdx){ return state.data.transport_cost[distIdx]; }
+
+// average price of a district-product across a given calendar year (for "เปรียบเทียบจังหวัด" — ตามปีที่เลือก)
+function yearAvgPrice(distIdx, prodIdx, yearStr){
+  const arr = state.data._byDistProd[distIdx+'-'+prodIdx];
+  if(!arr) return null;
+  const vals = arr.filter(([di])=> state.data.dates[di].slice(0,4)===yearStr).map(([,p])=>p);
+  return vals.length? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : null;
+}
+function yearAvgBkk(prodIdx, yearStr){
+  const arr = state.data._bkkByProd[prodIdx];
+  if(!arr) return null;
+  const vals = arr.filter(([di])=> state.data.dates[di].slice(0,4)===yearStr).map(([,p])=>p);
+  return vals.length? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : null;
+}
+function currentYearStr(){ return (state.filterDateISO||'').slice(0,4); }
+
+// ---------- FILTERS UI ----------
+function initFilters(){
+  const d = state.data;
+  const prodSel = $('fProduct');
+  const oAll = document.createElement('option'); oAll.value = -1; oAll.textContent = '🔍 ทุกผลิตภัณฑ์ (เฉลี่ย)'; prodSel.appendChild(oAll);
+  d.products.forEach((p,i)=>{ const o=document.createElement('option'); o.value=i; o.textContent=p; prodSel.appendChild(o); });
+  const defaultProd = -1;
+  prodSel.value = defaultProd; state.filterProduct = defaultProd;
+
+  const yearSel = $('fYear');
+  const years = [...new Set(d.dates.map(x=>x.slice(0,4)))].sort();
+  years.forEach(y=>{ const o=document.createElement('option'); o.value=y; o.textContent=(+y+543)+' (พ.ศ.)'; yearSel.appendChild(o); });
+
+  const monthSel = $('fMonth');
+  THAI_MONTHS_FULL.forEach((name,i)=>{ const o=document.createElement('option'); o.value=i+1; o.textContent=name; monthSel.appendChild(o); });
+
+  const daySel = $('fDay');
+  for(let i=1;i<=31;i++){ const o=document.createElement('option'); o.value=i; o.textContent=i; daySel.appendChild(o); }
+
+  // initialize to the latest available date in the dataset
+  const lastISO = d.dates[d.dates.length-1];
+  const [initY, initM, initD] = lastISO.split('-').map(Number);
+  yearSel.value = String(initY);
+  monthSel.value = String(initM);
+  daySel.value = String(initD);
+  state.filterDateISO = lastISO;
+
+  // Region filter
+  const regionSel = $('fRegion');
+  Object.keys(REGIONS).forEach(r=>{ const o=document.createElement('option'); o.value=r; o.textContent=r; regionSel.appendChild(o); });
+
+  const provSel = $('fProvince');
+  const distSel = $('fDistrict');
+
+  function refreshProvinceOptions(){
+    const region = state.filterRegion;
+    provSel.innerHTML = '<option value="">ทั้งหมด</option>';
+    let provs = [...d.provinces];
+    if(region) provs = provs.filter(p=>regionOf(p)===region);
+    provs.sort((a,b)=>a.localeCompare(b,'th'));
+    provs.forEach(p=>{
+      const o=document.createElement('option'); o.value=p;
+      o.textContent = p==='กรุงเทพมหานคร' ? 'กรุงเทพมหานคร (ราคากลาง)'
+        : d._zeroTransportProvinces.has(p) ? p+' (ค่าขนส่ง 0 บาท — ราคาเท่า กทม.)'
+        : p;
+      provSel.appendChild(o);
+    });
+    if(state.filterProvince && provs.includes(state.filterProvince)) provSel.value = state.filterProvince;
+    else { state.filterProvince = ''; provSel.value = ''; }
+  }
+  refreshProvinceOptions(); // initial population
+
+  function refreshDistrictOptions(){
+    const prov = state.filterProvince;
+    distSel.innerHTML = '<option value="">ทั้งหมด</option>';
+    if(!prov || prov==='กรุงเทพมหานคร') return;
+    const provIdx = d.provinces.indexOf(prov);
+    const distIdxs = (d._provDists[provIdx] || []).slice()
+      .sort((a,b)=>d.districts[a][1].localeCompare(d.districts[b][1],'th'));
+    distIdxs.forEach(i=>{ const o=document.createElement('option'); o.value=i; o.textContent=d.districts[i][1]; distSel.appendChild(o); });
+  }
+
+  // shared setters so map clicks / search / sidebar clicks all stay in sync with the filter bar
+  // clicking the same province/district again clears the filter (acts as a toggle)
+  window.setProvinceFilter = (prov)=>{
+    if(state.filterProvince === prov && !state.filterDistrictIdx){ prov = ''; }
+    state.filterProvince = prov; state.filterDistrictIdx = '';
+    provSel.value = prov; refreshDistrictOptions(); distSel.value = '';
+    renderAll();
+    return prov === '';
+  };
+  window.setDistrictFilter = (distIdx)=>{
+    if(String(state.filterDistrictIdx) === String(distIdx)){
+      state.filterDistrictIdx = '';
+      distSel.value = '';
+      renderAll();
+      return true;
+    }
+    const dd = d.districts[distIdx];
+    const prov = d.provinces[dd[0]];
+    state.filterProvince = prov; state.filterDistrictIdx = String(distIdx);
+    provSel.value = prov; refreshDistrictOptions(); distSel.value = String(distIdx);
+    renderAll();
+    return false;
+  };
+
+  function updateDateFromPickers(){
+    const yearBE = +yearSel.value + 543;
+    state.filterDateISO = buildISO(yearBE, +monthSel.value, +daySel.value);
+    renderAll();
+  }
+
+  prodSel.onchange = ()=>{ state.filterProduct=+prodSel.value; renderAll(); };
+  yearSel.onchange = updateDateFromPickers;
+  monthSel.onchange = updateDateFromPickers;
+  daySel.onchange = updateDateFromPickers;
+  regionSel.onchange = ()=>{ state.filterRegion = regionSel.value; state.filterProvince=''; state.filterDistrictIdx=''; refreshProvinceOptions(); refreshDistrictOptions(); renderAll(); };
+  provSel.onchange = ()=>{ state.filterProvince = provSel.value; state.filterDistrictIdx=''; refreshDistrictOptions(); renderAll(); };
+  distSel.onchange = ()=>{ state.filterDistrictIdx = distSel.value; renderAll(); };
+  $('resetFilters').onclick = ()=>{
+    prodSel.value=defaultProd; state.filterProduct=defaultProd;
+    yearSel.value=String(initY); monthSel.value=String(initM); daySel.value=String(initD);
+    state.filterDateISO = lastISO; state.filterYear='';
+    regionSel.value=''; state.filterRegion=''; refreshProvinceOptions();
+    provSel.value=''; state.filterProvince=''; state.filterDistrictIdx=''; refreshDistrictOptions();
+    $('fSearch').value='';
+    state.sidebarState = {type:null, key:null}; $('sidebar').classList.remove('open');
+    renderAll();
+  };
+
+  // search autocomplete
+  const searchInput = $('fSearch'), results = $('searchResults');
+  searchInput.oninput = ()=>{
+    const q = searchInput.value.trim();
+    if(!q){ results.style.display='none'; return; }
+    const matches = [];
+    [...d.provinces, 'กรุงเทพมหานคร'].forEach(p=>{
+      if(!p.includes(q)) return;
+      const label = p==='กรุงเทพมหานคร' ? 'กรุงเทพมหานคร (ราคากลาง)'
+        : d._zeroTransportProvinces.has(p) ? p+' (ค่าขนส่ง 0 บาท)'
+        : p;
+      matches.push({type:'prov', label, prov:p});
+    });
+    d.districts.forEach((dd,i)=>{ if(dd[1].includes(q)) matches.push({type:'dist', label:d.provinces[dd[0]]+' / '+dd[1], distIdx:i}); });
+    results.innerHTML='';
+    matches.slice(0,15).forEach(m=>{
+      const div=document.createElement('div'); div.textContent=m.label;
+      div.onclick=()=>{
+        results.style.display='none'; searchInput.value=m.label;
+        if(m.type==='prov'){ setProvinceFilter(m.prov); openProvinceSidebar(m.prov); }
+        else { setDistrictFilter(m.distIdx); openDistrictSidebar(m.distIdx); }
+      };
+      results.appendChild(div);
+    });
+    results.style.display = matches.length? 'block':'none';
+  };
+  document.addEventListener('click', e=>{ if(!e.target.closest('.search-wrap')) results.style.display='none'; });
+
+  // trend page province selectors
+  ['trendProvA','trendProvB','trendProvC'].forEach((id,idx)=>{
+    const sel = $(id);
+    const o0=document.createElement('option'); o0.value=''; o0.textContent='(ไม่เลือก)'; sel.appendChild(o0);
+    [...d.provinces].sort((a,b)=>a.localeCompare(b,'th')).forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+    if(idx===0) sel.value = 'กรุงเทพมหานคร' in {} ? '' : d.provinces[0];
+    sel.onchange = renderTrend;
+  });
+  $('trendProvA').value = d.provinces.includes('เชียงใหม่') ? 'เชียงใหม่' : d.provinces[0];
+  $('trendProvB').value = d.provinces.includes('ภูเก็ต') ? 'ภูเก็ต' : d.provinces[1];
+
+  // compare page province selectors (ไม่รวม กทม. เพราะไม่มีข้อมูลระดับอำเภอ)
+  ['compareProvA','compareProvB'].forEach(id=>{
+    const sel = $(id);
+    [...d.provinces].sort((a,b)=>a.localeCompare(b,'th')).forEach(p=>{ const o=document.createElement('option'); o.value=p; o.textContent=p; sel.appendChild(o); });
+    sel.onchange = renderCompare;
+  });
+  $('compareProvA').value = d.provinces.includes('เชียงใหม่') ? 'เชียงใหม่' : d.provinces[0];
+  $('compareProvB').value = d.provinces.includes('ภูเก็ต') ? 'ภูเก็ต' : d.provinces[1];
+
+  $('sidebarClose').onclick = ()=>{ $('sidebar').classList.remove('open'); state.sidebarState = {type:null, key:null}; };
+  $('outlierSearch').oninput = renderOutlierTable;
+  $('outlierShowAll').onchange = renderOutlierTable;
+  $('exportCsv').onclick = exportCurrentCsv;
+  $('trendExportPng').onclick = ()=>{
+    const url = getChart('trendChart').getDataURL({pixelRatio:2, backgroundColor: getComputedStyle(document.body).getPropertyValue('--bg')});
+    const a=document.createElement('a'); a.href=url; a.download='price-trend.png'; a.click();
+  };
+
+  document.querySelectorAll('.tab-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+      btn.classList.add('active');
+      $('page-'+btn.dataset.page).classList.add('active');
+      setTimeout(()=>Object.values(charts).forEach(c=>c.resize()), 50);
+    };
+  });
+
+  document.querySelectorAll('#mapColorSwitch .chip').forEach(btn=>{
+    btn.onclick = ()=>{
+      document.querySelectorAll('#mapColorSwitch .chip').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      renderMap();
+    };
+  });
+}
+
+// ---------- REGION MAPPING (5-region, consistent with existing OR system) ----------
+const REGIONS = {
+  "เหนือ": ["เชียงใหม่","เชียงราย","ลำปาง","ลำพูน","แม่ฮ่องสอน","น่าน","พะเยา","แพร่","อุตรดิตถ์","ตาก","สุโขทัย","พิษณุโลก","กำแพงเพชร","พิจิตร","เพชรบูรณ์","นครสวรรค์","อุทัยธานี"],
+  "กลาง": ["กรุงเทพมหานคร","นนทบุรี","ปทุมธานี","สมุทรปราการ","สมุทรสาคร","สมุทรสงคราม","นครปฐม","พระนครศรีอยุธยา","อ่างทอง","สิงห์บุรี","ชัยนาท","ลพบุรี","สระบุรี","สุพรรณบุรี","กาญจนบุรี","ราชบุรี","เพชรบุรี","ประจวบคีรีขันธ์","นครนายก"],
+  "อีสาน": ["นครราชสีมา","บุรีรัมย์","สุรินทร์","ศรีสะเกษ","อุบลราชธานี","ยโสธร","ชัยภูมิ","อำนาจเจริญ","หนองบัวลำภู","ขอนแก่น","อุดรธานี","เลย","หนองคาย","มหาสารคาม","ร้อยเอ็ด","กาฬสินธุ์","สกลนคร","นครพนม","มุกดาหาร","บึงกาฬ"],
+  "ตะวันออก": ["ชลบุรี","ระยอง","จันทบุรี","ตราด","ฉะเชิงเทรา","ปราจีนบุรี","สระแก้ว"],
+  "ใต้": ["นครศรีธรรมราช","กระบี่","พังงา","ภูเก็ต","สุราษฎร์ธานี","ระนอง","ชุมพร","สงขลา","สตูล","ตรัง","พัทลุง","ปัตตานี","ยะลา","นราธิวาส"]
+};
+function regionOf(prov){ for(const r in REGIONS){ if(REGIONS[r].includes(prov)) return r; } return 'อื่นๆ'; }
+const REGION_COLORS = { 'เหนือ':'#2563c9', 'กลาง':'#f59e0b', 'อีสาน':'#10b981', 'ตะวันออก':'#8b5cf6', 'ใต้':'#ec4899', 'อื่นๆ':'#94a3b8' };
+
+// ---------- DATA HELPERS ----------
+// ---------- ALL-PRODUCT AVERAGES ----------
+function avgBkkAll(cutoffISO){
+  const d=state.data; let sum=0,n=0;
+  d.products.forEach((_,pi)=>{ const v=bkkAsOf(pi,cutoffISO); if(v!=null){ sum+=v; n++; } });
+  return n?+(sum/n).toFixed(2):null;
+}
+function avgPriceAll(distIdx,cutoffISO){
+  const d=state.data; let sum=0,n=0;
+  d.products.forEach((_,pi)=>{ const v=priceAsOf(distIdx,pi,cutoffISO); if(v!=null){ sum+=v; n++; } });
+  return n?+(sum/n).toFixed(2):null;
+}
+function avgPriceAllDistricts(cutoffISO){
+  const d=state.data, out=[];
+  d.districts.forEach((dd,i)=>{
+    const price=avgPriceAll(i,cutoffISO);
+    if(price!=null) out.push({distIdx:i, price});
+  });
+  return out;
+}
+
+function latestSnapshot(){
+  // returns array of {distIdx, provIdx, prov, dist, price, transport, ref, diff}
+  const d = state.data, out=[];
+  const cutoff = state.filterDateISO, prod = state.filterProduct;
+  const isAll = prod === -1;
+  const bkk = isAll ? avgBkkAll(cutoff) : bkkAsOf(prod, cutoff);
+  d.districts.forEach((dd,i)=>{
+    const price = isAll ? avgPriceAll(i, cutoff) : (priceAsOf(i, prod, cutoff) ?? 0);
+    const prov = d.provinces[dd[0]];
+    if(state.filterRegion && regionOf(prov)!==state.filterRegion) return;
+    if(state.filterProvince && prov!==state.filterProvince) return;
+    if(state.filterDistrictIdx!=='' && String(i)!==String(state.filterDistrictIdx)) return;
+    const transport = transportOf(i);
+    const ref = (bkk!=null && transport!=null) ? bkk+transport : null;
+    const diff = ref!=null ? +(price-ref).toFixed(2) : null;
+    out.push({distIdx:i, provIdx:dd[0], prov, dist:dd[1], price, bkk, transport, ref, diff, region:regionOf(prov), compliant: diff!=null && Math.abs(diff)<=0.001});
+  });
+  if(bkk!=null && state.filterDistrictIdx==='' && (!state.filterProvince || state.filterProvince==='กรุงเทพมหานคร') && (!state.filterRegion || state.filterRegion==='กลาง')){
+    out.push({distIdx:null, provIdx:null, prov:'กรุงเทพมหานคร', dist:'ราคากลาง (กทม.)', price:bkk, transport:0, ref:bkk, diff:0, region:regionOf('กรุงเทพมหานคร'), compliant:true, isBangkokBaseline:true});
+  }
+  return out;
+}
+function provinceAverages(snapshot){
+  const map = {};
+  snapshot.forEach(r=>{ (map[r.prov] ||= []).push(r.price); });
+  return Object.entries(map).map(([prov, arr])=>({prov, avg:+(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2), n:arr.length}));
+}
+
+// ---------- RENDER ALL ----------
+function renderAll(){
+  if(!state.data) return;
+  if(state.sidebarState.type==null) $('sidebar').classList.remove('open');
+  renderKPI();
+  renderMap();
+  renderTopBottom();
+  renderRegionPie();
+  renderTrend();
+  renderMomChart();
+  renderProductMonthlyTrend();
+  renderTransport();
+  renderRanking();
+  renderCompare();
+  // keep sidebar in sync with whatever filters just changed, if it's open
+  if(state.sidebarState.type==='province') openProvinceSidebar(state.sidebarState.key);
+  else if(state.sidebarState.type==='district') openDistrictSidebar(state.sidebarState.key);
+}
+
+function chartTheme(){
+  return {
+    text: getComputedStyle(document.body).getPropertyValue('--text').trim() || '#0e2038',
+    dim: getComputedStyle(document.body).getPropertyValue('--text-dim').trim() || '#5b7291',
+    blue: '#2563c9', blueLight:'#8db2ee', up:'#e0483e', down:'#1ea672', border: getComputedStyle(document.body).getPropertyValue('--border').trim(),
+    surface: getComputedStyle(document.body).getPropertyValue('--surface-solid').trim() || (state.theme==='dark' ? '#101a2e' : '#ffffff')
+  };
+}
+
+// ---------- KPI ----------
+function renderKPI(){
+  const snap = latestSnapshot();
+  if(!snap.length){ $('kpiRow').innerHTML = '<div class="kpi-card">ไม่มีข้อมูลตามตัวกรอง</div>'; return; }
+  const stationSnap = snap.filter(r=>!r.isBangkokBaseline); // real retail stations only (exclude the กทม. reference row)
+  const prices = stationSnap.map(r=>r.price);
+  const avg = prices.length ? prices.reduce((a,b)=>a+b,0)/prices.length : null;
+  const max = stationSnap.length ? stationSnap.reduce((a,b)=>b.price>a.price?b:a) : null;
+  const min = stationSnap.length ? stationSnap.reduce((a,b)=>b.price<a.price?b:a) : null;
+  const transports = stationSnap.filter(r=>r.transport!=null).map(r=>r.transport);
+  const avgTransport = transports.length? transports.reduce((a,b)=>a+b,0)/transports.length : null;
+  const diffs = stationSnap.filter(r=>r.diff!=null).map(r=>r.diff);
+  const avgDiff = diffs.length? diffs.reduce((a,b)=>a+b,0)/diffs.length : null;
+  const provinceCount = new Set(stationSnap.map(r=>r.prov)).size;
+  const isAllProd = state.filterProduct === -1;
+  const bkkNow = isAllProd ? avgBkkAll(state.filterDateISO) : bkkAsOf(state.filterProduct, state.filterDateISO);
+  const compliantCount = stationSnap.filter(r=>r.compliant).length;
+  const productName = isAllProd ? 'ทุกผลิตภัณฑ์ (เฉลี่ย)' : state.data.products[state.filterProduct];
+
+  const scopeIsStation = state.filterDistrictIdx !== '' && stationSnap.length===1;
+  const scopeIsProvince = !scopeIsStation && !!state.filterProvince;
+  const cards = [];
+
+  if(scopeIsStation){
+    const r = stationSnap[0];
+    cards.push(['ราคาที่เลือก', r.price.toFixed(2)+' ฿', r.prov+' / '+r.dist+' · '+productName]);
+    cards.push(['ราคากลาง (กทม.)', bkkNow!=null? bkkNow.toFixed(2)+' ฿':'-', 'ฐานคำนวณราคาอ้างอิงทั่วประเทศ']);
+    cards.push(['ค่าขนส่ง สนพ.', r.transport!=null? r.transport.toFixed(2)+' ฿':'-', 'อำเภอที่เลือก']);
+    cards.push(['ส่วนต่างจากราคากลาง', r.diff!=null? `<span style="color:${r.diff>=0?'var(--up)':'var(--down)'}">${r.diff>=0?'+':''}${r.diff.toFixed(2)} ฿</span>`:'-', r.compliant? '✓ ตรงตามสนพ.' : (r.diff>0?'สูงกว่าราคากลาง':'ต่ำกว่าราคากลาง')]);
+  } else {
+    const avgLabel = scopeIsProvince ? 'ราคาเฉลี่ย · '+state.filterProvince : 'ราคาเฉลี่ยประเทศ';
+    cards.push([avgLabel, avg!=null? avg.toFixed(2)+' ฿':'-', productName]);
+    cards.push(['ราคากลาง (กทม.)', bkkNow!=null? bkkNow.toFixed(2)+' ฿':'-', 'ฐานคำนวณราคาอ้างอิงทั่วประเทศ']);
+    if(max) cards.push(['ราคาสูงสุด'+(scopeIsProvince?' ในจังหวัด':''), max.price.toFixed(2)+' ฿', max.prov+' / '+max.dist+(max.compliant? ' · <span style="color:var(--down)">✓ตรงตามสนพ.</span>' : (max.diff!=null? ` · <span style="color:${max.diff>0?'var(--up)':'var(--down)'}">${max.diff>0?'+':''}${max.diff.toFixed(2)}฿</span>`:''))]);
+    if(min) cards.push(['ราคาต่ำสุด'+(scopeIsProvince?' ในจังหวัด':''), min.price.toFixed(2)+' ฿', min.prov+' / '+min.dist+(min.compliant? ' · <span style="color:var(--down)">✓ตรงตามสนพ.</span>' : (min.diff!=null? ` · <span style="color:${min.diff>0?'var(--up)':'var(--down)'}">${min.diff>0?'+':''}${min.diff.toFixed(2)}฿</span>`:''))]);
+    if(!scopeIsProvince){
+      const provAvg = provinceAverages(stationSnap);
+      const provMax = provAvg.reduce((a,b)=>b.avg>a.avg?b:a);
+      const provMin = provAvg.reduce((a,b)=>b.avg<a.avg?b:a);
+      cards.push(['จังหวัดแพงสุด (เฉลี่ย)', provMax.avg.toFixed(2)+' ฿', provMax.prov]);
+      cards.push(['จังหวัดถูกสุด (เฉลี่ย)', provMin.avg.toFixed(2)+' ฿', provMin.prov]);
+    }
+    cards.push(['ค่าขนส่งเฉลี่ย สนพ.', avgTransport!=null? avgTransport.toFixed(2)+' ฿':'-', 'จาก '+transports.length+' อำเภอ']);
+    const aboveCountTop = diffs.filter(v=>v>0.001).length;
+    const belowCountTop = diffs.filter(v=>v<-0.001).length;
+    cards.push(['ส่วนต่างเฉลี่ยจากราคากลาง', avgDiff!=null? `<span style="color:${avgDiff>=0?'var(--up)':'var(--down)'}">${avgDiff>=0?'+':''}${avgDiff.toFixed(2)} ฿</span>`:'-', `▲${aboveCountTop} สูงกว่า · ▼${belowCountTop} ต่ำกว่า`]);
+    cards.push(['อำเภอที่ราคาตรงตามสนพ.', compliantCount+' / '+stationSnap.length, ((compliantCount/stationSnap.length*100)||0).toFixed(0)+'% ของอำเภอในตัวกรอง']);
+    cards.push(['จำนวนจังหวัด/อำเภอ', provinceCount+' / '+stationSnap.length, 'ในตัวกรองปัจจุบัน']);
+  }
+  $('kpiRow').innerHTML = cards.map(([l,v,s])=>`<div class="kpi-card"><div class="label">${l}</div><div class="value">${v}</div><div class="sub">${s}</div></div>`).join('');
+}
+
+// ---------- MAP ----------
+function renderMap(){
+  // Single consolidated map. Two coloring modes (สีตามส่วนต่าง / สีตามภูมิภาค) but the SAME rich tooltip
+  // (ราคา/ค่าขนส่ง/ส่วนต่าง/ภาค) in both, and the selected province always gets a gold highlight border.
+  const mode = document.querySelector('#mapColorSwitch .chip.active')?.dataset.mode || 'diff';
+  const snap = latestSnapshot();
+  const t = chartTheme();
+  const chart = getChart('mapChart');
+  const HL = '#f5b301'; // highlight color for the currently selected province
+
+  const byProv = {};
+  snap.forEach(r=>{ (byProv[r.prov] ||= []).push(r); });
+  const mapData = Object.entries(byProv).map(([name, rows])=>{
+    const avg = arr=>+(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2);
+    const price = avg(rows.map(r=>r.price));
+    const transportVals = rows.map(r=>r.transport).filter(v=>v!=null);
+    const diffVals = rows.map(r=>r.diff).filter(v=>v!=null);
+    const transport = transportVals.length? avg(transportVals) : null;
+    const diff = diffVals.length? avg(diffVals) : null;
+    const region = regionOf(name);
+    const isSelected = state.filterProvince && state.filterProvince===name;
+    const districtCount = rows.filter(r=>!r.isBangkokBaseline).length;
+    const compliantCount = rows.filter(r=>r.compliant&&!r.isBangkokBaseline).length;
+    const compliantRate = districtCount? +((compliantCount/districtCount)*100).toFixed(1) : 0;
+    const maxRow = rows.filter(r=>!r.isBangkokBaseline).sort((a,b)=>b.price-a.price)[0];
+    const minRow = rows.filter(r=>!r.isBangkokBaseline).sort((a,b)=>a.price-b.price)[0];
+    const base = {
+      name, value: mode==='region' ? price : (diff!=null? diff : 0),
+      price, transport, diff, region, isSelected, districtCount, compliantCount, compliantRate,
+      maxPrice: maxRow?.price, maxDist: maxRow?.dist,
+      minPrice: minRow?.price, minDist: minRow?.dist
+    };
+    if(mode==='region'){
+      base.itemStyle = isSelected ? {color:REGION_COLORS[region], borderColor:HL, borderWidth:3} : {color:REGION_COLORS[region]};
+    } else if(isSelected){
+      base.itemStyle = {borderColor:HL, borderWidth:3};
+    }
+    return base;
+  });
+
+  const tooltipFmt = p => {
+    if(!p.data) return `${p.name}<br>ไม่มีข้อมูล`;
+    const dd = p.data;
+    const diffStr = dd.diff!=null? (dd.diff>0?'+':'')+dd.diff.toFixed(2)+' ฿' : '-';
+    const diffColor = dd.diff!=null? (dd.diff>0.001?'#e0483e':dd.diff<-0.001?'#1ea672':'#8a97a8') : '#999';
+    const statusStr = dd.diff==null? '—' : Math.abs(dd.diff)<=0.001? '✓ ตรงตามสนพ.' : dd.diff>0.001? 'แพงกว่าเกณฑ์' : 'ถูกกว่าเกณฑ์';
+    return `<div style="min-width:220px;">`
+      + `<div style="font-size:14px;font-weight:600;margin-bottom:6px;">${p.name}${dd.isSelected? ' <span style="color:#f5b301">★</span>':''}</div>`
+      + `<div style="font-size:11px;color:#888;margin-bottom:8px;">ภาค${dd.region} · ${dd.districtCount} อำเภอ</div>`
+      + `<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px;font-size:12px;">`
+      + `<div>ราคาเฉลี่ย</div><div style="text-align:right;font-weight:600;">${dd.price?.toFixed?.(2) ?? '-'} ฿</div>`
+      + `<div>ค่าขนส่ง สนพ.</div><div style="text-align:right;">${dd.transport!=null? dd.transport.toFixed(2)+' ฿' : '-'}</div>`
+      + `<div>ส่วนต่าง</div><div style="text-align:right;color:${diffColor};font-weight:600;">${diffStr}</div>`
+      + `<div>สถานะ</div><div style="text-align:right;"><span style="color:${diffColor}">${statusStr}</span></div>`
+      + `</div>`
+      + `<div style="margin-top:8px;padding-top:6px;border-top:1px solid #eee;font-size:11px;color:#888;">`
+      + `ตรงตามสนพ.: ${dd.compliantCount}/${dd.districtCount} (${dd.compliantRate}%)`
+      + (dd.maxPrice? `<br>แพงสุด: ${dd.maxDist} ${dd.maxPrice.toFixed(2)}฿` : '')
+      + (dd.minPrice? `<br>ถูกสุด: ${dd.minDist} ${dd.minPrice.toFixed(2)}฿` : '')
+      + `</div></div>`;
+  };
+
+  const baseOption = {
+    backgroundColor:'transparent',
+    tooltip:{ trigger:'item', formatter: tooltipFmt },
+    series:[{
+      type:'map', map:'thailand', roam:true, label:{show:false},
+      emphasis:{ label:{show:true, color:'#fff'}, itemStyle:{areaColor:t.blue} },
+      itemStyle:{ borderColor:t.border, borderWidth:.6 },
+      data: mapData,
+      selectedMode:false
+    }]
+  };
+
+  if(mode==='region'){
+    chart.setOption({
+      ...baseOption,
+      visualMap:{show:false},
+      legend:{ data:Object.keys(REGION_COLORS), bottom:10, left:10, textStyle:{color:t.dim, fontSize:11}, itemWidth:12, itemHeight:12, icon:'circle' }
+    }, true);
+  } else {
+    const diffVals = mapData.map(x=>x.diff).filter(v=>v!=null);
+    const maxAbs = Math.max(0.3, ...diffVals.map(v=>Math.abs(v)));
+    chart.setOption({
+      ...baseOption,
+      legend:{show:false},
+      visualMap:{
+        show:true, left:10, bottom:10, orient:'horizontal', type:'piecewise',
+        text:['แพง (+)','ถูก (-)'], showLabel:false,
+        pieces:[
+          {min:0.56, max:maxAbs+1, color:'#7A0000', label:'แพงที่สุด'},
+          {min:0.20, max:0.56, color:'#B71C1C', label:'แพงมาก'},
+          {min:0.10, max:0.20, color:'#D32F2F', label:'แพง'},
+          {min:0.05, max:0.10, color:'#E53935', label:'แพงเล็กน้อย'},
+          {min:0.001, max:0.05, color:'#EF5350', label:'แพงนิดหน่อย'},
+          {min:-0.001, max:0.001, color:'#757575', label:'ปกติ'},
+          {min:-0.05, max:-0.001, color:'#43A047', label:'ถูกนิดหน่อย'},
+          {min:-0.10, max:-0.05, color:'#388E3C', label:'ถูกเล็กน้อย'},
+          {min:-0.20, max:-0.10, color:'#2E7D32', label:'ถูก'},
+          {min:-0.56, max:-0.20, color:'#1B5E20', label:'ถูกมาก'},
+          {min:-maxAbs-1, max:-0.56, color:'#0B3D0B', label:'ถูกที่สุด'}
+        ],
+        textStyle:{color:t.dim, fontSize:11, fontWeight:500}
+      }
+    }, true);
+  }
+
+  // reset any previous zoom/pan so the map returns to its default view when filters change/clear
+  chart.dispatchAction({type:'restore'});
+  chart.off('click'); chart.on('click', p=>{ if(p.name){ const cleared = setProvinceFilter(p.name); if(cleared){ $('sidebar').classList.remove('open'); state.sidebarState = {type:null, key:null}; } else { openProvinceSidebar(p.name); } } });
+}
+
+function diffBadgeHtml(diff, compliant){
+  if(diff==null) return '';
+  if(compliant) return `<span class="badge compliant">✓ ตรงตามสนพ.</span>`;
+  const cls = diff>0 ? 'diffpos':'diffneg';
+  const sign = diff>0 ? '+':'';
+  return `<span class="badge ${cls}">${sign}${diff.toFixed(2)} ฿ ${diff>0?'สูงกว่าราคากลาง':'ต่ำกว่าราคากลาง'}</span>`;
+}
+
+function openProvinceSidebar(prov){
+  state.sidebarState = {type:'province', key:prov};
+  const d = state.data;
+  const cutoff = state.filterDateISO, prod = state.filterProduct;
+  const isAllProd = prod === -1;
+  const bkk = isAllProd ? avgBkkAll(cutoff) : bkkAsOf(prod, cutoff);
+
+  if(prov==='กรุงเทพมหานคร'){
+    $('sbTitle').textContent = 'กรุงเทพมหานคร (ราคากลาง) — '+(isAllProd?'ทุกผลิตภัณฑ์ (เฉลี่ย)':d.products[prod]);
+    let html = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:10px;">ณ ${thDate(state.filterDateISO,'full')}</div>`;
+    html += `<div class="kpi-card"><div class="label">ราคากลาง (ราคา กทม. — ฐานสำหรับคำนวณราคาอ้างอิงทั่วประเทศ)</div><div class="value">${bkk!=null? bkk.toFixed(2)+' ฿' : '-'}</div><div class="sub">ค่าขนส่ง สนพ. ไม่มีผล (ระยะทาง 0)</div></div>`;
+    html += `<div style="margin-top:10px;"><h4 style="font-size:12px;margin-bottom:6px;">ราคาทุกผลิตภัณฑ์ล่าสุด</h4>`;
+    d.products.forEach((p,pi)=>{
+      const val = bkkAsOf(pi, cutoff);
+      if(val!=null) html += `<div class="district-row"><span>${p}</span><span>${val.toFixed(2)} ฿</span></div>`;
+    });
+    html += '</div>';
+    $('sbBody').innerHTML = html;
+    $('sidebar').classList.add('open');
+    return;
+  }
+
+  const provIdx = d.provinces.indexOf(prov);
+  const distIdxs = d._provDists[provIdx] || [];
+  const rows = distIdxs.map(i=>{
+    const price = isAllProd ? avgPriceAll(i, cutoff) : priceAsOf(i, prod, cutoff);
+    const transport = transportOf(i);
+    const ref = (bkk!=null && transport!=null) ? bkk+transport : null;
+    const diff = (price!=null && ref!=null) ? +(price-ref).toFixed(2) : null;
+    return {name:d.districts[i][1], price, transport, ref, diff, compliant: diff!=null && Math.abs(diff)<=0.001, distIdx:i};
+  }).filter(r=>r.price!=null).sort((a,b)=>b.price-a.price);
+
+  const region = regionOf(prov);
+  const avgPrice = rows.length? +(rows.reduce((a,r)=>a+r.price,0)/rows.length).toFixed(2) : 0;
+  const avgTransport = rows.filter(r=>r.transport!=null).length? +(rows.filter(r=>r.transport!=null).reduce((a,r)=>a+r.transport,0)/rows.filter(r=>r.transport!=null).length).toFixed(2) : 0;
+  const avgDiff = rows.filter(r=>r.diff!=null).length? +(rows.filter(r=>r.diff!=null).reduce((a,r)=>a+r.diff,0)/rows.filter(r=>r.diff!=null).length).toFixed(2) : 0;
+  const compliantCount = rows.filter(r=>r.compliant).length;
+  const aboveCount = rows.filter(r=>r.diff!=null && r.diff>0.001).length;
+  const belowCount = rows.filter(r=>r.diff!=null && r.diff<-0.001).length;
+
+  $('sbTitle').textContent = 'จังหวัด'+prov;
+  let html = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:4px;">${region} · ${rows.length} อำเภอ · ณ ${thDate(state.filterDateISO,'full')}</div>`;
+  html += `<div style="font-size:11.5px;color:var(--text-dim);margin-bottom:10px;">${isAllProd?'ทุกผลิตภัณฑ์ (เฉลี่ย)':d.products[prod]} · ราคากลาง กทม.: <b style="color:var(--text)">${bkk!=null? bkk.toFixed(2)+' ฿':'-'}</b></div>`;
+
+  // Summary cards
+  html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">`;
+  html += `<div class="kpi-card" style="padding:10px;"><div class="label">ราคาเฉลี่ย</div><div class="value" style="font-size:15px;">${avgPrice} ฿</div></div>`;
+  html += `<div class="kpi-card" style="padding:10px;"><div class="label">ค่าขนส่งเฉลี่ย</div><div class="value" style="font-size:15px;">${avgTransport} ฿</div></div>`;
+  html += `<div class="kpi-card" style="padding:10px;"><div class="label">ส่วนต่างเฉลี่ย</div><div class="value" style="font-size:15px;color:${avgDiff>0.001?'var(--up)':avgDiff<-0.001?'var(--down)':'var(--text-dim)'};">${avgDiff>=0?'+':''}${avgDiff} ฿</div><div class="sub" style="font-size:10px;"><span style="color:var(--up)">▲${aboveCount} สูงกว่า</span> · <span style="color:var(--down)">▼${belowCount} ต่ำกว่า</span></div></div>`;
+  html += `<div class="kpi-card" style="padding:10px;"><div class="label">ตรงตามสนพ.</div><div class="value" style="font-size:15px;">${compliantCount}/${rows.length} (${rows.length?((compliantCount/rows.length*100).toFixed(0)):0}%)</div></div>`;
+  html += `</div>`;
+
+  if(d._zeroTransportProvinces.has(prov)){
+    html += `<div style="font-size:11.5px;color:var(--blue-600);margin-bottom:10px;">ℹ ค่าขนส่ง สนพ. = 0 บาททุกอำเภอ (ราคาเท่า กทม.)</div>`;
+  }
+  if(rows.length){
+    const maxRow = rows[0], minRow = rows[rows.length-1];
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:10px;">
+      <div class="kpi-card" style="padding:10px;"><div class="label">แพงสุด</div><div class="value" style="font-size:14px">${maxRow.price.toFixed(2)} ฿</div><div class="sub">${maxRow.name}</div>${diffBadgeHtml(maxRow.diff, maxRow.compliant)}</div>
+      <div class="kpi-card" style="padding:10px;"><div class="label">ถูกสุด</div><div class="value" style="font-size:14px">${minRow.price.toFixed(2)} ฿</div><div class="sub">${minRow.name}</div>${diffBadgeHtml(minRow.diff, minRow.compliant)}</div>
+    </div>`;
+  }
+
+  // Mini trend chart for this province
+  html += `<div id="sbProvTrend" class="echart" style="height:160px;margin-bottom:10px;"></div>`;
+
+  // All products summary
+  html += `<h4 style="font-size:12px;margin-bottom:6px;">ราคาทุกผลิตภัณฑ์ล่าสุด (อำเภอเฉลี่ย)</h4>`;
+  d.products.forEach((p,pi)=>{
+    const prodDiffs = distIdxs.map(i=>{
+      const price = priceAsOf(i, pi, cutoff);
+      const transport = transportOf(i);
+      const bkkV = bkkAsOf(pi, cutoff);
+      if(price==null || transport==null || bkkV==null) return null;
+      return +(price-(bkkV+transport)).toFixed(2);
+    }).filter(v=>v!=null);
+    const avgP = prodDiffs.length? null : null;
+    let sum=0,n=0;
+    distIdxs.forEach(i=>{
+      const price = priceAsOf(i, pi, cutoff);
+      if(price!=null){ sum+=price; n++; }
+    });
+    const avgVal = n? +(sum/n).toFixed(2) : null;
+    if(avgVal!=null){
+      const prodDiff = prodDiffs.length? +(prodDiffs.reduce((a,b)=>a+b,0)/prodDiffs.length).toFixed(2) : null;
+      const status = prodDiff==null? '' : prodDiff===0? '<span style="color:var(--down);font-size:10px;">✓ ตรงสนพ.</span>' : prodDiff>0? `<span style="color:var(--up);font-size:10px;">+${prodDiff}</span>` : `<span style="color:var(--down);font-size:10px;">${prodDiff}</span>`;
+      html += `<div class="district-row"><span>${p}</span><span>${avgVal.toFixed(2)} ฿ ${status}</span></div>`;
+    }
+  });
+
+  // District list
+  html += `<h4 style="font-size:12px;margin:10px 0 6px;">รายชื่ออำเภอ (${rows.length} แห่ง)</h4>`;
+  rows.forEach(r=>{
+    html += `<div class="district-row" style="cursor:pointer; flex-direction:column; align-items:stretch; gap:3px;" onclick="if(setDistrictFilter(${r.distIdx})){ $('sidebar').classList.remove('open'); state.sidebarState={type:null,key:null}; } else { openDistrictSidebar(${r.distIdx}); }">
+      <div style="display:flex;justify-content:space-between;"><span>${r.name}</span><span>${r.price.toFixed(2)} ฿ ${r.transport!=null? '<small style=\\"color:var(--text-dim)\\">(ขนส่ง '+r.transport.toFixed(2)+')</small>':''}</span></div>
+      <div>${diffBadgeHtml(r.diff, r.compliant)}</div>
+    </div>`;
+  });
+  $('sbBody').innerHTML = html;
+  $('sidebar').classList.add('open');
+
+  // Render mini trend
+  const provDistIdxs = distIdxs.slice(0, 30);
+  const trendPoints = isAllProd ? dailyForwardFillAvgAll(provDistIdxs) : dailyForwardFillAvg(provDistIdxs, prod);
+  if(trendPoints.length > 1){
+    const chartT = chartTheme();
+    getChart('sbProvTrend').setOption({
+      backgroundColor:'transparent',
+      grid:{left:40,right:10,top:10,bottom:24},
+      xAxis:{type:'category', data:trendPoints.map(p=>thDate(p[0],'axis')), axisLabel:{color:chartT.dim,fontSize:8,rotate:30}},
+      yAxis:{type:'value', scale:true, axisLabel:{color:chartT.dim,fontSize:8}, splitLine:{lineStyle:{color:chartT.border}}},
+      tooltip:{trigger:'axis'},
+      series:[{type:'line', data:trendPoints.map(p=>p[1]), smooth:true, areaStyle:{opacity:.1}, itemStyle:{color:chartT.blue}, lineStyle:{color:chartT.blue,width:1.5}, showSymbol:false}]
+    }, true);
+  }
+}
+  $('sidebar').classList.add('open');
+
+
+function openDistrictSidebar(distIdx){
+  state.sidebarState = {type:'district', key:distIdx};
+  const d = state.data;
+  const dist = d.districts[distIdx];
+  const prov = d.provinces[dist[0]];
+  const prod = state.filterProduct;
+  const isAllProd = prod === -1;
+  const cutoff = state.filterDateISO;
+  const bkk = isAllProd ? avgBkkAll(cutoff) : bkkAsOf(prod, cutoff);
+  const curPrice = isAllProd ? avgPriceAll(distIdx, cutoff) : priceAsOf(distIdx, prod, cutoff);
+  const transport = transportOf(distIdx);
+  const ref = (bkk!=null && transport!=null) ? bkk+transport : null;
+  const diff = (curPrice!=null && ref!=null) ? +(curPrice-ref).toFixed(2) : null;
+  const compliant = diff!=null && Math.abs(diff)<=0.001;
+  const prodLabel = isAllProd ? 'ทุกผลิตภัณฑ์ (เฉลี่ย)' : d.products[prod];
+
+  $('sbTitle').textContent = prov+' / '+dist[1];
+  let html = `<div style="font-size:12px;color:var(--text-dim);margin-bottom:8px;">${prodLabel} · ณ ${thDate(cutoff,'full')}</div>`;
+  if(curPrice != null){
+    html += `<div class="kpi-card" style="margin-bottom:10px;"><div class="label">ราคาล่าสุด</div>
+      <div class="value">${curPrice.toFixed(2)} ฿</div>
+      ${transport!=null? `<div class="sub">ค่าขนส่ง สนพ.: ${transport.toFixed(2)} ฿</div>`:''}
+    </div>`;
+    html += `<div class="kpi-card" style="margin-bottom:10px;">
+      <div class="label">ราคากลาง (กทม.) + ค่าขนส่ง สนพ. = ราคาอ้างอิง</div>
+      <div class="value" style="font-size:16px;">${bkk!=null?bkk.toFixed(2):'-'} + ${transport!=null?transport.toFixed(2):'-'} = ${ref!=null?ref.toFixed(2):'-'} ฿</div>
+      <div style="margin-top:6px;">${diffBadgeHtml(diff, compliant)}</div>
+    </div>`;
+    if(!isAllProd){
+      const series = (d._byDistProd[distIdx+'-'+prod]||[]);
+      if(series.length){
+        html += `<div id="sbTrend" class="echart" style="height:220px"></div>`;
+      }
+    } else {
+      html += `<div id="sbTrend" class="echart" style="height:220px"></div>`;
+    }
+  } else {
+    html += '<div>ไม่มีข้อมูลราคาในตัวกรองปัจจุบัน</div>';
+  }
+  // ranking of products at this district
+  html += `<h4 style="margin:14px 0 6px;font-size:13px;">ราคาทุกผลิตภัณฑ์ล่าสุด</h4>`;
+  d.products.forEach((p,pi)=>{
+    const val = priceAsOf(distIdx, pi, state.filterDateISO);
+    if(val!=null) html += `<div class="district-row"><span>${p}</span><span>${val.toFixed(2)} ฿</span></div>`;
+  });
+  $('sbBody').innerHTML = html;
+  $('sidebar').classList.add('open');
+  if(curPrice != null){
+    const t = chartTheme();
+    let trendData;
+    if(isAllProd){
+      trendData = dailyForwardFillAvgAll([distIdx]);
+    } else {
+      trendData = dailyForwardFillAvg([distIdx], prod);
+    }
+    if(trendData.length){
+      getChart('sbTrend').setOption({
+        backgroundColor:'transparent',
+        grid:{left:40,right:16,top:16,bottom:26},
+        xAxis:{type:'category', data:trendData.map(s=>thDate(s[0],'axis')), axisLabel:{color:t.dim, fontSize:9, rotate:40}},
+        yAxis:{type:'value', scale:true, axisLabel:{color:t.dim, fontSize:9}, splitLine:{lineStyle:{color:t.border}}},
+        tooltip:{trigger:'axis'},
+        series:[{type:'line', data:trendData.map(s=>s[1]), smooth:true, areaStyle:{opacity:.15}, itemStyle:{color:t.blue}, lineStyle:{color:t.blue,width:2}}]
+      }, true);
+    }
+  }
+}
+window.openDistrictSidebar = openDistrictSidebar;
+
+// ---------- TOP/BOTTOM + REGION PIE ----------
+function renderTopBottom(){
+  const snap = latestSnapshot();
+  const provAvg = provinceAverages(snap).sort((a,b)=>b.avg-a.avg);
+  const top5 = provAvg.slice(0,5);
+  const bottom5 = provAvg.slice(-5).reverse();
+  const t = chartTheme();
+  getChart('topBottomChart').setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    legend:{data:['สูงสุด','ต่ำสุด'], textStyle:{color:t.dim, fontSize:10}, top:0},
+    grid:{left:70,right:16,top:30,bottom:20},
+    xAxis:{type:'value', axisLabel:{color:t.dim,fontSize:9}, splitLine:{lineStyle:{color:t.border}}},
+    yAxis:{type:'category', data:[...top5.map(x=>x.prov),...bottom5.map(x=>x.prov)].reverse(), axisLabel:{color:t.text,fontSize:10}},
+    series:[{
+      type:'bar', data:[...top5.map(x=>({value:x.avg,itemStyle:{color:t.up}})),...bottom5.map(x=>({value:x.avg,itemStyle:{color:t.down}}))].reverse(),
+      label:{show:true, position:'right', color:t.text, fontSize:9, formatter:p=>p.value.toFixed(2)}
+    }]
+  }, true);
+}
+function renderRegionPie(){
+  const snap = latestSnapshot();
+  const m = {};
+  snap.forEach(r=>{ (m[r.region] ||= []).push(r.price); });
+  const data = Object.entries(m).map(([name,arr])=>({name, value:+(arr.reduce((a,b)=>a+b,0)/arr.length).toFixed(2), itemStyle:{color:REGION_COLORS[name]||'#94a3b8'}}));
+  const t = chartTheme();
+  getChart('regionPie').setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'item', formatter:'{b}: {c} ฿ ({d}%)'},
+    legend:{bottom:0, textStyle:{color:t.dim, fontSize:10}},
+    series:[{type:'pie', radius:['35%','65%'], data, label:{color:t.text, fontSize:10}, itemStyle:{borderColor: getComputedStyle(document.body).getPropertyValue('--bg'), borderWidth:2}}]
+  }, true);
+}
+
+// ---------- TREND ----------
+function renderTrend(){
+  const d = state.data;
+  const provs = ['trendProvA','trendProvB','trendProvC'].map(id=>$(id).value).filter(Boolean);
+  const t = chartTheme();
+  const colors = [t.blue, t.up, t.down];
+  const series = [];
+  provs.forEach((prov,idx)=>{
+    const provIdx = d.provinces.indexOf(prov);
+    const distIdxs = d._provDists[provIdx] || [];
+    // continuous daily forward-filled average across districts (fills gaps between price-change events)
+    const points = state.filterProduct===-1 ? dailyForwardFillAvgAll(distIdxs) : dailyForwardFillAvg(distIdxs, state.filterProduct);
+    const color = colors[idx];
+    series.push({
+      name:prov, type:'line', smooth:false, showSymbol:false,
+      lineStyle:{width:2, color}, itemStyle:{color},
+      data:points.map(p=>[thDate(p[0],'axis'), p[1]]),
+      _iso: points.map(p=>p[0])
+    });
+  });
+  getChart('trendChart').setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis'},
+    legend:{data:provs, textStyle:{color:t.dim}, top:0},
+    grid:{left:50,right:20,top:40,bottom:70},
+    dataZoom:[{type:'inside'},{type:'slider', textStyle:{color:t.dim}}],
+    xAxis:{type:'category', axisLabel:{color:t.dim, fontSize:9, rotate:30}},
+    yAxis:{type:'value', scale:true, axisLabel:{color:t.dim}, splitLine:{lineStyle:{color:t.border}}},
+    series
+  }, true);
+}
+
+// ---------- PRODUCT MONTHLY TREND (ทุกผลิตภัณฑ์ในกราฟเดียว) ----------
+function renderProductMonthlyTrend(){
+  const d = state.data;
+  const t = chartTheme();
+  // เลือกเฉพาะอำเภอในจังหวัดที่กรองอยู่ (ถ้ามี) ไม่งั้นใช้ทั้งประเทศ
+  let distIdxs;
+  if(state.filterProvince){
+    const provIdx = d.provinces.indexOf(state.filterProvince);
+    distIdxs = d._provDists[provIdx] || [];
+  } else {
+    distIdxs = d.districts.map((_,i)=>i);
+  }
+  const distSet = new Set(distIdxs);
+
+  // จัดกลุ่มราคาตามเดือน (YYYY-MM) แยกตามผลิตภัณฑ์ จากราคาที่บันทึกจริง (event-based, ไม่ forward-fill)
+  const byMonth = {}; // ym -> [sumPerProduct[], countPerProduct[]]
+  d.district_prices.forEach(([di, distIdx, prodIdx, price])=>{
+    if(!distSet.has(distIdx)) return;
+    const ym = d.dates[di].slice(0,7);
+    byMonth[ym] ||= { sum: new Array(d.products.length).fill(0), count: new Array(d.products.length).fill(0) };
+    byMonth[ym].sum[prodIdx] += price;
+    byMonth[ym].count[prodIdx]++;
+  });
+  const months = Object.keys(byMonth).sort();
+  const allMonths = months;
+  const colors = ['#2563c9','#e0483e','#1ea672','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#64748b'];
+  const series = [];
+  d.products.forEach((p,pi)=>{
+    const actual = months.map(ym=>{
+      const c = byMonth[ym].count[pi];
+      return c? +(byMonth[ym].sum[pi]/c).toFixed(2) : null;
+    });
+    const color = colors[pi%colors.length];
+    series.push({
+      name:p, type:'line', smooth:false, showSymbol:false, connectNulls:false,
+      lineStyle:{width:2, color}, itemStyle:{color},
+      data:actual
+    });
+  });
+  getChart('productMonthlyTrend').setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis'},
+    legend:{data:d.products, textStyle:{color:t.dim, fontSize:10}, top:0, type:'scroll'},
+    grid:{left:50,right:20,top:50,bottom:70},
+    dataZoom:[{type:'inside'},{type:'slider', textStyle:{color:t.dim}}],
+    xAxis:{type:'category', data:allMonths.map(ym=>{ const [y,m]=ym.split('-'); return THAI_MONTHS_SHORT[+m-1]+' '+(+y+543); }), axisLabel:{color:t.dim, fontSize:9, rotate:30}},
+    yAxis:{type:'value', scale:true, axisLabel:{color:t.dim}, splitLine:{lineStyle:{color:t.border}}},
+    series
+  }, true);
+}
+
+// ---------- TRANSPORT ANALYSIS ----------
+function renderTransport(){
+  const snap = latestSnapshot().filter(r=>r.transport!=null && !r.isBangkokBaseline);
+  const t = chartTheme();
+  const d0 = state.data;
+  const cutoff0 = state.filterDateISO;
+
+  // outlier detection: ตอนนี้ตรวจครบทุกผลิตภัณฑ์ (ไม่ใช่แค่ผลิตภัณฑ์ที่เลือกอยู่ในตัวกรอง) — z-score คำนวณแยกต่อผลิตภัณฑ์ เพราะแต่ละชนิดมีสเกลราคาต่างกัน
+  const allRows = [];
+  d0.products.forEach((prodName, pi)=>{
+    const bkkVal = bkkAsOf(pi, cutoff0);
+    if(bkkVal==null) return;
+    const rows = [];
+    d0.districts.forEach((dd,i)=>{
+      const prov = d0.provinces[dd[0]];
+      if(state.filterProvince && prov!==state.filterProvince) return;
+      if(state.filterDistrictIdx!=='' && String(i)!==String(state.filterDistrictIdx)) return;
+      const transport = transportOf(i);
+      if(transport==null) return;
+      const price = priceAsOf(i, pi, cutoff0) ?? 0;
+      const diff = +(price-(bkkVal+transport)).toFixed(2);
+      rows.push({prov, dist:dd[1], product:prodName, price, bkk:bkkVal, transport, diff});
+    });
+    if(!rows.length) return;
+    const diffs = rows.map(r=>r.diff);
+    const mean = diffs.reduce((a,b)=>a+b,0)/diffs.length;
+    const std = Math.sqrt(diffs.reduce((a,b)=>a+(b-mean)**2,0)/diffs.length) || 1;
+    rows.forEach(r=>{ r.z = (r.diff-mean)/std; r.isOutlier = Math.abs(r.z)>1.8; allRows.push(r); });
+  });
+  allRows.sort((a,b)=>Math.abs(b.z)-Math.abs(a.z));
+  state._outlierAllRows = allRows;
+  renderOutlierTable();
+
+  // Heatmap: region (rows) x product (columns) — สัดส่วนอำเภอที่ "ไม่ตรงตามราคาอ้างอิง สนพ." (non-compliance rate)
+  // เหตุผลที่เปลี่ยนจากค่าเบี่ยงเบนเฉลี่ย: อัตราการปฏิบัติตามทั้งประเทศสูงถึง ~98% ทำให้ค่าเฉลี่ยของแต่ละช่องใกล้ 0 แทบทุกช่อง
+  // สีจึงดูจางเกือบเหมือนกันหมดจนแยกไม่ออกว่าช่องไหนมีปัญหาจริง เปลี่ยนมาวัด "สัดส่วนอำเภอที่ไม่ผ่าน" แทนจะเห็นจุดผิดปกติชัดกว่ามาก
+  const d = state.data;
+  const regionNames = Object.keys(REGIONS);
+  const cutoff = state.filterDateISO;
+  const cells = [];
+  regionNames.forEach((region, ri)=>{
+    d.products.forEach((p, pi)=>{
+      const bkkVal = bkkAsOf(pi, cutoff);
+      let total=0, nonCompliant=0; const nonCompliantDiffs=[];
+      d.districts.forEach((dd,i)=>{
+        if(regionOf(d.provinces[dd[0]])!==region) return;
+        if(state.filterProvince && d.provinces[dd[0]]!==state.filterProvince) return;
+        const price = priceAsOf(i, pi, cutoff); // null = ไม่มีข้อมูลผลิตภัณฑ์นี้ในปีนี้ -> ไม่นับในอัตรา (ตัดสินไม่ได้)
+        const transport = transportOf(i);
+        if(price==null || transport==null || bkkVal==null) return;
+        total++;
+        const diff = price - (bkkVal+transport);
+        if(Math.abs(diff) > 0.001){ nonCompliant++; nonCompliantDiffs.push(diff); }
+      });
+      if(total>0){
+        const rate = +(nonCompliant/total*100).toFixed(1);
+        const avgNonCompliantDiff = nonCompliantDiffs.length? +(nonCompliantDiffs.reduce((a,b)=>a+b,0)/nonCompliantDiffs.length).toFixed(2) : 0;
+        cells.push({value:[pi, ri, rate], total, nonCompliant, avgNonCompliantDiff});
+      } else {
+        cells.push({value:[pi, ri, null], total:0, nonCompliant:0, avgNonCompliantDiff:0}); // ไม่มีข้อมูล = ช่องว่าง (สีเทา)
+      }
+    });
+  });
+  getChart('transportHeatmap').setOption({
+    backgroundColor:'transparent',
+    tooltip:{ position:'top', formatter:p=>{
+      const c = p.data;
+      if(c.total===0) return `${regionNames[p.value[1]]} / ${d.products[p.value[0]]}<br>ไม่มีข้อมูลในตัวกรองปัจจุบัน`;
+      return `${regionNames[p.value[1]]} / ${d.products[p.value[0]]}<br>`
+        + `ไม่ตรงตามสนพ.: ${c.nonCompliant} / ${c.total} อำเภอ (${c.value[2]}%)<br>`
+        + (c.nonCompliant? `ส่วนต่างเฉลี่ยของอำเภอที่ไม่ตรง: ${c.avgNonCompliantDiff>0?'+':''}${c.avgNonCompliantDiff} ฿` : 'ตรงตามราคาอ้างอิง สนพ. ทั้งหมด');
+    }},
+    grid:{left:80,right:20,top:20,bottom:70},
+    xAxis:{type:'category', data:d.products, axisLabel:{color:t.dim, fontSize:9, rotate:40, interval:0}, splitArea:{show:true}},
+    yAxis:{type:'category', data:regionNames, axisLabel:{color:t.text, fontSize:11}, splitArea:{show:true}},
+    visualMap:{ min:0, max:100, calculable:true, orient:'horizontal', left:'center', bottom:0, text:['ไม่ตรงตามสนพ.มาก','ตรงตามสนพ.ทั้งหมด'], inRange:{color:['#eef3fb','#f6c453','#e0483e']}, textStyle:{color:t.dim} },
+    series:[{
+      type:'heatmap', data:cells,
+      label:{show:true, color:'#fff', fontSize:10, fontWeight:700, formatter:p=>p.data.total? p.data.value[2]+'%' : '–',
+        textBorderColor:'rgba(0,0,0,.65)', textBorderWidth:2.5},
+      itemStyle:{ borderColor:t.border, borderWidth:1,
+        color: p=> p.data.total===0 ? '#9aa7bb' : undefined }
+    }]
+  }, true);
+}
+
+function renderOutlierTable(){
+  const q = ($('outlierSearch')?.value || '').trim().toLowerCase();
+  const showAll = $('outlierShowAll')?.checked || false;
+  const all = state._outlierAllRows || [];
+  let rows = showAll ? all : all.filter(r=>r.isOutlier);
+  if(q) rows = rows.filter(r=> r.prov.toLowerCase().includes(q) || r.dist.toLowerCase().includes(q) || r.product.toLowerCase().includes(q));
+
+  const sortState = state.outlierSort || (state.outlierSort = {key:null, dir:null});
+  if(sortState.key==='diff'){
+    rows = [...rows].sort((a,b)=> sortState.dir==='asc' ? a.diff-b.diff : b.diff-a.diff);
+  }
+  const arrow = sortState.key==='diff' ? (sortState.dir==='asc'?' ▲':' ▼') : ' ⇅';
+
+  $('outlierTable').innerHTML = `<thead><tr>
+      <th>จังหวัด</th><th>อำเภอ</th><th>ผลิตภัณฑ์</th><th>ราคาต้นทาง (กทม.)</th><th>ราคาปลายทาง</th>
+      <th>ค่าขนส่ง สนพ.</th><th>ส่วนต่างเฉลี่ยที่พบ</th>
+      <th id="outlierSortHeader" style="cursor:pointer; user-select:none;" title="คลิกเพื่อเรียงจากน้อย→มาก / มาก→น้อย">ค่าความคลาดเคลื่อน${arrow}</th>
+      <th>สถานะ</th>
+    </tr></thead><tbody>` +
+    (rows.length? rows.map(r=>{
+      const foundDiff = +(r.price-r.bkk).toFixed(2); // ราคาปลายทาง - ราคาต้นทาง
+      const status = r.diff>0.001 ? 'ราคาแพง' : r.diff<-0.001 ? 'ราคาถูก' : 'ตรงตามสนพ.';
+      const statusColor = r.diff>0.001 ? 'var(--up)' : r.diff<-0.001 ? 'var(--down)' : 'var(--text-dim)';
+      return `<tr>
+        <td>${r.prov}</td><td>${r.dist}</td><td>${r.product}</td>
+        <td>${r.bkk.toFixed(2)}</td>
+        <td>${r.price.toFixed(2)}</td>
+        <td>${r.transport.toFixed(2)}</td>
+        <td>${foundDiff>0?'+':''}${foundDiff.toFixed(2)}</td>
+        <td style="color:${r.diff>=0?'var(--up)':'var(--down)'};font-weight:500;">${r.diff>=0?'+':''}${r.diff.toFixed(2)}</td>
+        <td style="color:${statusColor};font-weight:600;">${status}</td>
+      </tr>`;
+    }).join('') : `<tr><td colspan="9" style="text-align:center;color:var(--text-dim);padding:16px;">ไม่พบรายการที่ตรงกับคำค้นหา</td></tr>`) +
+    `</tbody>`;
+
+  $('outlierSortHeader').onclick = ()=>{
+    sortState.key = 'diff';
+    sortState.dir = sortState.dir==='asc' ? 'desc' : 'asc';
+    renderOutlierTable();
+  };
+}
+
+// ---------- RANKING ----------
+function renderRanking(){
+  const snap = latestSnapshot();
+  const provAvg = provinceAverages(snap).sort((a,b)=>b.avg-a.avg);
+  const t = chartTheme();
+  const top20 = provAvg.slice(0,20).reverse();
+  const bottom20 = provAvg.slice(-20);
+  getChart('rankTop').setOption({
+    backgroundColor:'transparent', tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    grid:{left:90,right:20,top:10,bottom:20},
+    xAxis:{type:'value', axisLabel:{color:t.dim}, splitLine:{lineStyle:{color:t.border}}},
+    yAxis:{type:'category', data:top20.map(x=>x.prov), axisLabel:{color:t.text, fontSize:10}},
+    series:[{type:'bar', data:top20.map(x=>x.avg), itemStyle:{color:t.up}, label:{show:true,position:'right',color:t.text,fontSize:9,formatter:p=>p.value.toFixed(2)}}]
+  }, true);
+  getChart('rankBottom').setOption({
+    backgroundColor:'transparent', tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    grid:{left:90,right:20,top:10,bottom:20},
+    xAxis:{type:'value', axisLabel:{color:t.dim}, splitLine:{lineStyle:{color:t.border}}},
+    yAxis:{type:'category', data:bottom20.map(x=>x.prov).reverse(), axisLabel:{color:t.text, fontSize:10}},
+    series:[{type:'bar', data:bottom20.map(x=>x.avg).reverse(), itemStyle:{color:t.down}, label:{show:true,position:'right',color:t.text,fontSize:9,formatter:p=>p.value.toFixed(2)}}]
+  }, true);
+}
+
+// ---------- DISTRICT HEATMAP ----------
+// ---------- COMPARE 2 PROVINCES ----------
+function renderCompare(){
+  const d = state.data, t = chartTheme();
+  const provA = $('compareProvA')?.value, provB = $('compareProvB')?.value;
+  if(!provA || !provB) return;
+  const yearStr = currentYearStr();
+
+  // ---- grouped bar: ราคาเฉลี่ยรายผลิตภัณฑ์ ของ 2 จังหวัด เทียบกับราคากลาง กทม. (ปีที่เลือก) ----
+  const provAIdx = d.provinces.indexOf(provA), provBIdx = d.provinces.indexOf(provB);
+  const distA = d._provDists[provAIdx] || [], distB = d._provDists[provBIdx] || [];
+  const avgOf = (distIdxs, pi) => {
+    const vals = distIdxs.map(i=>yearAvgPrice(i,pi,yearStr)).filter(v=>v!=null);
+    return vals.length? +(vals.reduce((a,b)=>a+b,0)/vals.length).toFixed(2) : 0; // ไม่มีข้อมูล = 0
+  };
+  const seriesA = d.products.map((p,pi)=>avgOf(distA,pi));
+  const seriesB = d.products.map((p,pi)=>avgOf(distB,pi));
+  const seriesBkk = d.products.map((p,pi)=>yearAvgBkk(pi,yearStr) ?? 0);
+
+  getChart('compareBar').setOption({
+    backgroundColor:'transparent',
+    tooltip:{trigger:'axis', axisPointer:{type:'shadow'}},
+    legend:{data:[provA, provB, 'ราคากลาง กทม.'], textStyle:{color:t.dim, fontSize:10}, top:0},
+    grid:{left:50,right:20,top:40,bottom:70},
+    xAxis:{type:'category', data:d.products, axisLabel:{color:t.dim, fontSize:9, rotate:40, interval:0}},
+    yAxis:{type:'value', scale:true, axisLabel:{color:t.dim}, splitLine:{lineStyle:{color:t.border}}},
+    series:[
+      {name:provA, type:'bar', data:seriesA, itemStyle:{color:t.blue}, label:{show:true, position:'top', color:t.text, fontSize:8, rotate:90, align:'left', verticalAlign:'middle', formatter:p=>p.value.toFixed(2)}},
+      {name:provB, type:'bar', data:seriesB, itemStyle:{color:t.up}, label:{show:true, position:'top', color:t.text, fontSize:8, rotate:90, align:'left', verticalAlign:'middle', formatter:p=>p.value.toFixed(2)}},
+      {name:'ราคากลาง กทม.', type:'bar', data:seriesBkk, itemStyle:{color:t.dim}, label:{show:true, position:'top', color:t.text, fontSize:8, rotate:90, align:'left', verticalAlign:'middle', formatter:p=>p.value.toFixed(2)}}
+    ]
+  }, true);
+}
+
+// ---------- MOM PRICE CHANGE CHART ----------
+function renderMomChart(){
+  const d = state.data;
+  const t = chartTheme();
+  let distIdxs;
+  if(state.filterProvince){
+    const provIdx = d.provinces.indexOf(state.filterProvince);
+    distIdxs = d._provDists[provIdx] || [];
+  } else {
+    distIdxs = d.districts.map((_,i)=>i);
+  }
+  const distSet = new Set(distIdxs);
+  const byMonth = {};
+  d.district_prices.forEach(([di, distIdx, prodIdx, price])=>{
+    if(!distSet.has(distIdx)) return;
+    const ym = d.dates[di].slice(0,7);
+    byMonth[ym] = byMonth[ym] || { sum: new Array(d.products.length).fill(0), count: new Array(d.products.length).fill(0) };
+    byMonth[ym].sum[prodIdx] += price;
+    byMonth[ym].count[prodIdx]++;
+  });
+  const months = Object.keys(byMonth).sort();
+  const momMonths = months.slice(1);
+  if(!momMonths.length){
+    getChart('momChart').clear(); return;
+  }
+  const colors = ['#2563c9','#e0483e','#1ea672','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#84cc16','#f97316','#64748b'];
+  const series = d.products.map((p, pi)=>{
+    const color = colors[pi % colors.length];
+    const data = momMonths.map((ym, i)=>{
+      const prev = byMonth[months[i]];
+      const cur = byMonth[ym];
+      if(!prev || !cur || prev.count[pi]===0 || cur.count[pi]===0) return null;
+      const prevAvg = prev.sum[pi] / prev.count[pi];
+      const curAvg = cur.sum[pi] / cur.count[pi];
+      return +(curAvg - prevAvg).toFixed(2);
+    });
+    return {
+      name: p, type: 'bar', data,
+      itemStyle: { color, borderRadius: [3,3,0,0] },
+      barMaxWidth: 16,
+      label: { show: false }
+    };
+  });
+  getChart('momChart').setOption({
+    backgroundColor:'transparent',
+    tooltip:{ trigger:'axis', axisPointer:{type:'shadow'}, formatter: params => {
+      let s = `<b>${params[0]?.axisValue || ''}</b><br>`;
+      params.forEach(p => {
+        if(p.value != null) s += `${p.marker} ${p.seriesName}: <b style="color:${p.value >= 0 ? '#e0483e' : '#1ea672'}">${p.value >= 0 ? '+' : ''}${p.value} ฿</b><br>`;
+      });
+      return s;
+    }},
+    legend:{ data:d.products, textStyle:{color:t.dim, fontSize:10}, top:0, type:'scroll' },
+    grid:{left:50,right:20,top:50,bottom:70},
+    dataZoom:[{type:'inside'},{type:'slider', textStyle:{color:t.dim}}],
+    xAxis:{ type:'category', data:momMonths.map(ym=>{ const [y,m]=ym.split('-'); return THAI_MONTHS_SHORT[+m-1]+' '+(+y+543); }), axisLabel:{color:t.dim, fontSize:9, rotate:30} },
+    yAxis:{ type:'value', axisLabel:{color:t.dim, formatter:v=>(v>=0?'+':'')+v+' ฿'}, splitLine:{lineStyle:{color:t.border}},
+      name:'เปลี่ยนแปลง (฿)', nameTextStyle:{color:t.dim, fontSize:10} },
+    series
+  }, true);
+}
+
+// ---------- EXPORT CSV ----------
+function exportCurrentCsv(){
+  const snap = latestSnapshot();
+  const rows = [['จังหวัด','อำเภอ','ผลิตภัณฑ์','ราคา','ค่าขนส่งสนพ.','ส่วนต่างอ้างอิง']];
+  const prodName = state.filterProduct===-1 ? 'ทุกผลิตภัณฑ์ (เฉลี่ย)' : state.data.products[state.filterProduct];
+  snap.forEach(r=> rows.push([r.prov, r.dist, prodName, r.price, r.transport ?? '', r.diff ?? '']));
+  const csv = '\uFEFF' + rows.map(r=>r.map(v=>`"${v}"`).join(',')).join('\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'pttor-price-export.csv'; a.click();
+}
+
+loadData();
+$('refreshData').onclick = async ()=>{
+  const db = await idbOpen();
+  await new Promise((res)=>{
+    const tx = db.transaction(CACHE_STORE,'readwrite');
+    tx.objectStore(CACHE_STORE).delete(CACHE_KEY);
+    tx.oncomplete = res;
+  });
+  location.reload();
+};
+</script>
+</body>
+</html>

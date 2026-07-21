@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bangchak Oil Retail Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f7f9fc;
+  --surface:#ffffff;
+  --ink:#0f172a;
+  --muted:#64748b;
+  --line:#e2e8f0;
+  --brand:#16a34a;
+  --red:#ef4444;
+  --radius:14px;
+  --shadow:0 16px 38px -28px rgba(15,23,42,.45);
+}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font-family:"Prompt",sans-serif}
+a{color:inherit;text-decoration:none}
+.app{width:min(1480px,calc(100% - 36px));margin:0 auto;padding:22px 0 44px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:18px}
+.nav{display:flex;gap:10px;flex-wrap:wrap}
+.nav a,.ghost{
+  border:1px solid var(--line);
+  background:var(--surface);
+  color:var(--muted);
+  padding:10px 13px;
+  border-radius:10px;
+  font-size:13px;
+  font-weight:600;
+  cursor:pointer;
+}
+.nav a:hover,.ghost:hover{color:var(--ink);border-color:#bae6fd}
+.brand-pill{display:flex;align-items:center;gap:12px;font-weight:700}
+.brand-mark{
+  width:38px;height:38px;border-radius:12px;
+  display:grid;place-items:center;background:var(--brand);color:white;
+  box-shadow:0 14px 28px -20px var(--brand);
+}
+.brand-logo{height:52px;width:auto;object-fit:contain;display:block}
+.hero{
+  background:linear-gradient(135deg,rgba(15,23,42,.94),rgba(30,41,59,.88));
+  color:#fff;
+  border-radius:18px;
+  padding:26px;
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:20px;
+  box-shadow:var(--shadow);
+}
+.hero h1{font-size:clamp(26px,4vw,44px);line-height:1.12;margin:8px 0}
+.hero p{margin:0;color:#cbd5e1;max-width:780px;line-height:1.7}
+.stamp{color:#93c5fd;font-size:12px;text-transform:uppercase;letter-spacing:2px;font-weight:700}
+.filters{
+  margin:18px 0;
+  display:grid;
+  grid-template-columns:repeat(6,minmax(150px,1fr));
+  gap:14px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:16px;
+}
+.field{display:flex;flex-direction:column;gap:7px}
+label{font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+select{
+  width:100%;
+  border:1px solid var(--line);
+  border-radius:10px;
+  background:#f8fafc;
+  padding:11px 12px;
+  font:inherit;
+  color:var(--ink);
+}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:var(--shadow);
+  position: relative;
+  overflow: hidden;
+}
+.kpi::after {
+  content: ''; position: absolute; top: 0; left: 0; width: 4px; height: 100%; background: var(--brand); opacity: 0.8;
+}
+.kpi:nth-child(2)::after { background: #22c55e; }
+.kpi:nth-child(3)::after { background: #f59e0b; }
+.kpi:nth-child(4)::after { background: #8b5cf6; }
+
+.kpi span{display:block;color:var(--muted);font-size:13px;font-weight:600;margin-bottom:8px}
+.kpi strong{font-size:30px;line-height:1; color:var(--ink);}
+.kpi small{display:block;color:var(--muted);margin-top:8px; font-size: 11px;}
+.content-grid{
+    display:grid;
+    grid-template-columns:650px 1fr;
+    gap:18px;
+    align-items:start;
+}
+.panel{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:18px;
+}
+.panel-title{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+.panel h2{font-size:18px;margin:0}
+.panel .subtitle{margin:2px 0 0;color:var(--muted);font-size:12.5px}
+.map-wrap{
+    display:grid;
+    grid-template-columns:1fr 180px;
+    gap:18px;
+    align-items:center;
+}
+.map-stage{
+    position:relative;
+    min-height:720px;
+}
+
+#map,
+.fallback-map{
+    width:100%;
+    height:720px;
+}
+
+#map svg{
+    width:100% !important;
+    height:100% !important;
+}
+#map,.fallback-map{width:100%;height:580px}
+#map{display:none}
+.simplemap-loaded #map{display:block}
+.simplemap-loaded .fallback-map{display:none}
+.region{cursor:pointer;transition:filter .2s,opacity .2s,transform .2s;transform-origin:center}
+.region:hover{filter:brightness(1.06);transform:translateY(-2px)}
+.region.dim{opacity:.28}
+.region.active{filter:drop-shadow(0 10px 12px rgba(14,165,233,.25))}
+.map-legend{display:flex;flex-direction:column;gap:12px; background: #f8fafc; padding: 14px; border-radius: 12px; border: 1px solid var(--line);}
+.legend-item{display:flex;align-items:center;gap:8px;color:var(--ink);font-size:13px; font-weight: 500;}
+.dot{width:12px;height:12px;border-radius:50%;background:var(--c); display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);}
+.province-summary{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  margin-top:14px;
+}
+.province-summary-grid {
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.summary-item{
+  background:#f8fafc;
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:12px;
+}
+.summary-item.full { grid-column: 1 / -1; background: #f0f9ff; border-color: #bae6fd; }
+.cpl-badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11.5px;font-weight:700}
+.cpl-badge.ok{background:#f0fdf4;color:#16a34a;border:1px solid #bbf7d0}
+.cpl-badge.bad{background:#fef2f2;color:#dc2626;border:1px solid #fecaca}
+.summary-item span{display:block;color:var(--muted);font-size:12px;margin-bottom:4px}
+.summary-item strong{font-size:16px; color: var(--ink);}
+.charts{display:grid;grid-template-columns:1.15fr .85fr;gap:18px;margin-bottom:18px}
+.chart-box{height:310px}
+.exec-panel{margin-bottom:18px}
+.exec-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:18px;align-items:stretch}
+.exec-chart-box{height:300px}
+.exec-callouts{display:flex;flex-direction:column;gap:10px;justify-content:center}
+.exec-callout{
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:14px 16px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:#f8fafc;
+}
+.exec-callout .cdot{width:10px;height:10px;border-radius:50%;flex:0 0 auto}
+.exec-callout .clabel{color:var(--muted);font-size:12px;margin-bottom:2px}
+.exec-callout .cvalue{font-size:17px;font-weight:700}
+.exec-callout.high{background:#fef2f2;border-color:#fecaca}
+.exec-callout.low{background:#f0fdf4;border-color:#bbf7d0}
+.exec-callout.spread{background:#eff6ff;border-color:#bae6fd}
+.compare-picker{display:flex;align-items:flex-end;gap:16px;margin:14px 0;flex-wrap:wrap}
+.compare-field{display:flex;flex-direction:column;gap:6px;min-width:200px;flex:1}
+.compare-field label{font-size:12px;color:var(--muted)}
+.compare-field select{padding:9px 10px;border-radius:8px;border:1px solid var(--line);font-family:inherit;font-size:13.5px}
+.compare-vs{font-size:12.5px;color:var(--muted);padding-bottom:10px;font-weight:600}
+.compare-summary{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:8px}
+.compare-summary .ccard{
+  flex:1;min-width:180px;
+  border:1px solid var(--line);border-radius:10px;
+  padding:10px 13px;background:#f8fafc;
+}
+.compare-summary .ccard .clabel{display:block;font-size:11.5px;color:var(--muted);margin-bottom:3px}
+.compare-summary .ccard .cvalue{font-size:16px;font-weight:700;color:#0f172a}
+.compare-summary .ccard.diff.up{background:#fef2f2;border-color:#fecaca}
+.compare-summary .ccard.diff.down{background:#f0fdf4;border-color:#bbf7d0}
+.fuel-toggle-row{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+.fuel-toggle-label{display:block;font-size:12px;color:var(--muted);margin-bottom:8px}
+.fuel-toggle-chips{display:flex;flex-wrap:wrap;gap:8px}
+.fuel-chip{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:6px 12px;border-radius:999px;
+  border:1.5px solid var(--line);
+  background:#fff;font-size:12.5px;cursor:pointer;
+  user-select:none;transition:.15s ease;color:var(--muted);
+}
+.fuel-chip:hover{border-color:#94a3b8}
+.fuel-chip.active{color:#0f172a;font-weight:600}
+.fuel-chip .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.fuel-chip .dot.off{background:#cbd5e1 !important}
+.table-wrap{overflow:auto; max-height: 400px;}
+table{width:100%;border-collapse:separate;border-spacing:0;min-width:760px}
+th,td{padding:13px 14px;border-bottom:1px solid var(--line);text-align:left;font-size:14px;white-space:nowrap}
+th{background:#f8fafc;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.4px; position: sticky; top: 0; z-index: 10;}
+tbody tr:hover td{background:#f8fafc}
+.badge{
+  display:inline-flex;
+  padding:5px 9px;
+  border-radius:999px;
+  background:#eff6ff;
+  color:#2563eb;
+  font-size:12px;
+  font-weight:700;
+}
+.status{color:var(--muted);font-size:13px; text-align: center; padding: 30px !important;}
+.error{color:var(--red);font-weight:700}
+.right{text-align:right}
+
+/* ซ่อนลายน้ำ/ลิงก์ทดลองใช้งานของ Simplemaps ทุกขนาดหน้าจอ */
+#map a{display:none !important}
+#map a image,#map a rect,#map a text{display:none !important}
+#map text tspan{display:none !important}
+#map [id*="watermark" i],#map [class*="watermark" i]{display:none !important}
+
+@media(max-width:1100px){
+  .content-grid,.charts,.exec-grid{grid-template-columns:1fr}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .filters{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:700px){
+  .app{width:min(100% - 24px,1440px)}
+  .hero,.topbar{align-items:flex-start;flex-direction:column}
+  .kpis,.filters{grid-template-columns:1fr}
+  .map-wrap{grid-template-columns:1fr}
+  .map-stage{min-height:380px}
+  #map,.fallback-map{height:380px}
+}
+</style>
+</head>
+<body>
+<main class="app">
+  <nav class="topbar" aria-label="Page navigation">
+    <div class="brand-pill">
+      <img class="brand-logo" src="assets/picture/bangchak-logo-sm.png" alt="โลโก้ บางจาก" style="display:none" onload="this.style.display='block'; this.nextElementSibling.style.display='none';" onerror="this.style.display='none';">
+      <span class="brand-mark brand-fallback">BCP</span>
+      <span>ระบบแสดงผลราคาน้ำมันขายปลีก บางจาก</span>
+    </div>
+    <div class="nav">
+      <a href="index.html">โครงสร้างห่วงโซ่อุปทาน</a>
+      <a href="Companies.html">บริษัทที่เกี่ยวข้อง</a>
+      <button class="ghost" type="button" onclick="resetFilters()">รีเซ็ตตัวกรอง</button>
+      <button class="ghost" type="button" onclick="loadExcelData(true)" title="ใช้เมื่อไฟล์ Excel ต้นทางถูกแก้ไข เพราะปกติระบบจะอ่านจากแคชที่เก็บไว้">โหลดข้อมูลใหม่</button>
+    </div>
+  </nav>
+
+<section class="hero">
+  <div>
+    <div class="stamp" id="sourceStamp">แหล่งข้อมูล : bangchak_historical_prices.csv</div>
+    <h1>แดชบอร์ดราคาน้ำมันขายปลีก (บางจาก)</h1>
+    <p>แนวโน้มราคาขายปลีกน้ำมันบางจากแยกตามชนิดผลิตภัณฑ์ ตั้งแต่ปี 2560 ถึงปัจจุบัน ข้อมูลชุดนี้เป็น <strong>ราคาระดับประเทศรายวัน ไม่มีข้อมูลแยกจังหวัด/อำเภอ</strong> จึงยังไม่มีแผนที่ ตัวกรองพื้นที่ หรือ panel ตรวจสอบค่าขนส่งแบบเดียวกับ OR — จะเพิ่มให้เมื่อมีข้อมูลรายพื้นที่ของบางจาก</p>
+  </div>
+  <div>
+    <div class="stamp">สถานะระบบ</div>
+    <strong id="loadStatus">กำลังโหลดข้อมูล...</strong>
+  </div>
+</section>
+
+  <section class="filters" aria-label="Dashboard filters" style="grid-template-columns:repeat(2,minmax(180px,1fr))">
+    <div class="field">
+      <label for="rangeFilter">ช่วงเวลา</label>
+      <select id="rangeFilter">
+        <option value="all">ทั้งหมด</option>
+        <option value="1y">1 ปีล่าสุด</option>
+        <option value="3y">3 ปีล่าสุด</option>
+        <option value="5y">5 ปีล่าสุด</option>
+      </select>
+    </div>
+    <div class="field">
+      <label for="fuelFilter">ชนิดน้ำมัน</label>
+      <select id="fuelFilter"><option value="">ทุกชนิด (ตามที่เลือกด้านล่าง)</option></select>
+    </div>
+  </section>
+
+  <section class="kpis" aria-label="KPI cards">
+    <article class="kpi"><span>จำนวนรายการทั้งหมด</span><strong id="kpiRecords">0</strong><small>แถวราคาที่บันทึกไว้</small></article>
+    <article class="kpi"><span>ชนิดน้ำมัน</span><strong id="kpiProducts">0</strong><small>ชนิดผลิตภัณฑ์ที่มีข้อมูล</small></article>
+    <article class="kpi"><span>ราคาเฉลี่ย (ตามตัวกรอง)</span><strong id="kpiPrice">0.00</strong><small>บาท / ลิตร</small></article>
+    <article class="kpi"><span>อัปเดตข้อมูลล่าสุด</span><strong id="kpiLatest">-</strong><small>วันที่ล่าสุดในระบบ</small></article>
+  </section>
+
+  <section class="panel exec-panel" aria-label="Executive summary">
+    <div class="panel-title">
+      <div>
+        <h2>สรุปราคาสำหรับผู้บริหาร</h2>
+        <p class="subtitle">ราคาล่าสุดและแนวโน้ม 12 เดือน ของ 2 ผลิตภัณฑ์หลัก (ดีเซล และ แก๊สโซฮอล์ 95)</p>
+      </div>
+    </div>
+    <div class="exec-grid">
+      <div class="exec-chart-box"><canvas id="execChart"></canvas></div>
+      <div class="exec-callouts" id="execCallouts"></div>
+    </div>
+  </section>
+
+  <section class="panel exec-panel" aria-label="Trend by product">
+    <div class="panel-title">
+      <div>
+        <h2>แนวโน้มราคารายผลิตภัณฑ์</h2>
+        <p class="subtitle">คลิกป้ายชื่อสินค้าด้านล่างเพื่อเลือกแสดง/ซ่อนเส้นกราฟ</p>
+      </div>
+      <span class="badge" id="trendFuelBadge">แสดง 0 จาก 0 ชนิด</span>
+    </div>
+    <div class="exec-chart-box" style="height:360px"><canvas id="trendChart"></canvas></div>
+    <div class="fuel-toggle-row">
+      <span class="fuel-toggle-label">เลือกชนิดน้ำมันที่จะแสดง:</span>
+      <div class="fuel-toggle-chips" id="productToggles"></div>
+    </div>
+  </section>
+
+  <section class="charts" aria-label="Additional analysis charts">
+    <div class="panel">
+      <div class="panel-title">
+        <div>
+          <h2>ส่วนต่างราคา (Spread)</h2>
+          <p class="subtitle">Hi Diesel B20 S เทียบกับ Hi Diesel S และ Gasohol 91 เทียบกับ 95</p>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="spreadChart"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title">
+        <div>
+          <h2>ความถี่การปรับราคาต่อปี</h2>
+          <p class="subtitle">นับจำนวนวันที่มีการประกาศราคาใหม่ (Hi Diesel S)</p>
+        </div>
+      </div>
+      <div class="chart-box"><canvas id="freqChart"></canvas></div>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Data table">
+    <div class="panel-title">
+      <div>
+        <h2>ตารางข้อมูลราคา</h2>
+        <p class="subtitle">เรียงจากวันที่ล่าสุดไปเก่าสุด แสดงเฉพาะสินค้าที่เลือกไว้ด้านบน</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>วันที่</th><th>ชนิดน้ำมัน</th><th class="right">ราคา (บาท/ลิตร)</th></tr>
+        </thead>
+        <tbody id="dataTable"><tr><td colspan="3" class="status">กำลังโหลด...</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+// ป้ายชื่อภาษาไทยของแต่ละสินค้า (ชื่อคอลัมน์ดิบเป็นภาษาอังกฤษจากไฟล์ต้นทาง)
+const PRODUCT_LABELS = {
+  "Hi Premium Diesel S": "ไฮพรีเมียมดีเซล เอส",
+  "Hi Diesel S": "ไฮดีเซล เอส",
+  "Hi Diesel B20 S": "ไฮดีเซล B20 เอส",
+  "Hi Premium 97 Gasohol 95": "ไฮพรีเมียม 97 แก๊สโซฮอล์ 95",
+  "Gasohol E85 S EVO": "แก๊สโซฮอล์ E85 เอส อีโว่",
+  "Gasohol E20 S EVO": "แก๊สโซฮอล์ E20 เอส อีโว่",
+  "Gasohol 91 S EVO": "แก๊สโซฮอล์ 91 เอส อีโว่",
+  "Gasohol 95 S EVO": "แก๊สโซฮอล์ 95 เอส อีโว่"
+};
+const PRODUCT_COLORS = {
+  "Hi Premium Diesel S": "#166534",
+  "Hi Diesel S": "#16a34a",
+  "Hi Diesel B20 S": "#4d7c0f",
+  "Hi Premium 97 Gasohol 95": "#0891b2",
+  "Gasohol E85 S EVO": "#b45309",
+  "Gasohol E20 S EVO": "#c2410c",
+  "Gasohol 91 S EVO": "#7c3aed",
+  "Gasohol 95 S EVO": "#be123c"
+};
+// เปิดแสดงตามค่าเริ่มต้นเฉพาะสินค้าที่มีข้อมูลต่อเนื่องยาวที่สุด กันกราฟรกตอนเปิดหน้าแรก
+const DEFAULT_VISIBLE = ["Hi Diesel S", "Gasohol 95 S EVO"];
+
+let allRows = [];
+let productSelected = null; // Set ของสินค้าที่กำลังโชว์เป็นเส้นกราฟ; null = ยังไม่ตั้งค่าเริ่มต้น
+let chart;
+let execChart;
+let spreadChart;
+let freqChart;
+
+const loadStatus = document.getElementById("loadStatus");
+const rangeFilter = document.getElementById("rangeFilter");
+const fuelFilter = document.getElementById("fuelFilter");
+const productToggles = document.getElementById("productToggles");
+const trendFuelBadge = document.getElementById("trendFuelBadge");
+const dataTable = document.getElementById("dataTable");
+
+function normalizeDate(v){
+  if(v == null) return null;
+  // d/m/y พ.ศ. -> ISO ค.ศ.
+  if(typeof v === "string" && v.includes("/")){
+    const [d, m, yBE] = v.split("/").map(Number);
+    const y = yBE - 543;
+    return `${String(y).padStart(4,"0")}-${String(m).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+  }
+  if(typeof v === "number"){
+    const d = XLSX.SSF.parse_date_code(v);
+    if(!d) return null;
+    return `${String(d.y).padStart(4,"0")}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`;
+  }
+  const s = String(v).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0,10);
+  return s;
+}
+
+async function init(){
+  try{
+    loadStatus.textContent = "กำลังโหลดข้อมูล...";
+    const res = await fetch("assets/data/bangchak_data.xlsx");
+    if(!res.ok) throw new Error("โหลด assets/data/bangchak_data.xlsx ไม่สำเร็จ");
+    const buf = await res.arrayBuffer();
+    const wb = XLSX.read(buf, { type: "array", cellDates: false });
+    const sheet = wb.Sheets[wb.SheetNames[0]];
+    const raw = XLSX.utils.sheet_to_json(sheet, { defval: null });
+
+    allRows = raw
+      .map(r => ({
+        date: normalizeDate(r.Date),
+        product: r.Product,
+        price: Number(r.Price)
+      }))
+      .filter(r => r.date && r.product && r.price > 0);
+
+    loadStatus.textContent = `โหลดสมบูรณ์ (${allRows.length.toLocaleString()} รายการ)`;
+  }catch(err){
+    console.error(err);
+    loadStatus.innerHTML = '<span class="error">พบข้อผิดพลาดในการโหลด</span>';
+    dataTable.innerHTML = '<tr><td colspan="3" class="error status">โหลด assets/data/bangchak_data.xlsx ไม่สำเร็จ โปรดตรวจสอบว่ามีไฟล์นี้อยู่ในโฟลเดอร์ assets/data/ หรือไม่</td></tr>';
+    return;
+  }
+
+  const allProducts = [...new Set(allRows.map(r=>r.product))];
+  optionList(fuelFilter, allProducts);
+  bindEvents();
+  updateDashboard();
+}
+
+function optionList(select, items){
+  select.innerHTML = `<option value="">ทุกชนิด (ตามที่เลือกด้านล่าง)</option>` +
+    items.map(item=>`<option value="${item}">${PRODUCT_LABELS[item] || item}</option>`).join("");
+}
+
+function bindEvents(){
+  rangeFilter.addEventListener("change", updateDashboard);
+  fuelFilter.addEventListener("change", ()=>{
+    // เลือกชนิดน้ำมันเดียวจาก dropdown จะ sync ไปที่ chip ด้านล่างให้ตรงกัน
+    if(fuelFilter.value){
+      productSelected = new Set([fuelFilter.value]);
+    }
+    updateDashboard();
+  });
+}
+
+function filteredRows(){
+  let rows = allRows;
+  const range = rangeFilter.value;
+  if(range !== "all"){
+    const years = {"1y":1,"3y":3,"5y":5}[range];
+    const maxDate = rows.reduce((m,r)=>r.date>m?r.date:m, "0000-00-00");
+    const cutoff = new Date(maxDate);
+    cutoff.setFullYear(cutoff.getFullYear()-years);
+    const cutoffISO = cutoff.toISOString().slice(0,10);
+    rows = rows.filter(r=>r.date >= cutoffISO);
+  }
+  return rows;
+}
+
+function updateDashboard(){
+  const rows = filteredRows();
+  const allProducts = [...new Set(rows.map(r=>r.product))];
+
+  // จำสถานะ chip ที่ผู้ใช้เลือกไว้ ตัดสินค้าที่หลุดตัวกรองออก เหมือน pattern
+  // ของ regionFuelToggles ใน dashboard OR
+  if(productSelected === null){
+    productSelected = new Set(allProducts.filter(p=>DEFAULT_VISIBLE.includes(p)));
+    if(productSelected.size === 0) productSelected = new Set(allProducts);
+  } else {
+    productSelected = new Set([...productSelected].filter(p=>allProducts.includes(p)));
+    if(productSelected.size === 0) productSelected = new Set(allProducts);
+  }
+
+  productToggles.innerHTML = allProducts.map(product=>{
+    const active = productSelected.has(product);
+    const color = PRODUCT_COLORS[product] || "#16a34a";
+    return `<button type="button" class="fuel-chip ${active?"active":""}" data-product="${product.replace(/"/g,"&quot;")}">
+      <span class="dot ${active?"":"off"}" style="background:${active?color:""}"></span>${PRODUCT_LABELS[product] || product}
+    </button>`;
+  }).join("") || '<span class="fuel-toggle-label">ไม่มีข้อมูลชนิดน้ำมันตามตัวกรองนี้</span>';
+
+  productToggles.querySelectorAll(".fuel-chip").forEach(chip=>{
+    chip.addEventListener("click", ()=>{
+      const product = chip.dataset.product;
+      if(productSelected.has(product)) productSelected.delete(product);
+      else productSelected.add(product);
+      updateDashboard();
+    });
+  });
+
+  trendFuelBadge.textContent = `แสดง ${productSelected.size} จาก ${allProducts.length} ชนิด`;
+
+  const chartRows = rows.filter(r=>productSelected.has(r.product));
+  renderKPIs(rows, allProducts, chartRows);
+  renderExecSummary(allRows);
+  renderChart(chartRows);
+  renderSpreadChart(rows);
+  renderFreqChart(rows);
+  renderTable(chartRows);
+}
+
+function renderKPIs(rows, allProducts, chartRows){
+  document.getElementById("kpiRecords").textContent = rows.length.toLocaleString();
+  document.getElementById("kpiProducts").textContent = allProducts.length;
+
+  const avg = chartRows.length ? chartRows.reduce((s,r)=>s+r.price,0)/chartRows.length : 0;
+  document.getElementById("kpiPrice").textContent = avg.toFixed(2);
+
+  const dates = rows.map(r=>r.date).sort();
+  document.getElementById("kpiLatest").textContent = dates.length ? dates[dates.length-1] : "-";
+}
+
+function renderChart(rows){
+  const byProduct = new Map();
+  rows.forEach(r=>{
+    if(!byProduct.has(r.product)) byProduct.set(r.product, []);
+    byProduct.get(r.product).push(r);
+  });
+
+  const datasets = [...byProduct.entries()].map(([product, points])=>{
+    points.sort((a,b)=>a.date.localeCompare(b.date));
+    return {
+      label: PRODUCT_LABELS[product] || product,
+      data: points.map(p=>({x:p.date, y:p.price})),
+      borderColor: PRODUCT_COLORS[product] || "#16a34a",
+      backgroundColor: "transparent",
+      borderWidth: 2,
+      pointRadius: 2,
+      tension: .15
+    };
+  });
+
+  if(chart) chart.destroy();
+  chart = new Chart(document.getElementById("trendChart"), {
+    type: "line",
+    data: { datasets },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: {mode:"index", intersect:false},
+      scales: {
+        x: { type:"time", time:{unit:"month"}, grid:{display:false} },
+        y: { title:{display:true, text:"บาท/ลิตร"} }
+      },
+      plugins: {
+        legend: { display:false }, // ใช้ chip ด้านล่างแทน กันซ้ำซ้อน
+        tooltip: { callbacks: {
+          label: (ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} บาท`
+        }}
+      }
+    }
+  });
+}
+
+function renderExecSummary(allData){
+  const EXEC_PRODUCTS = [
+    { key: "Hi Diesel S", label: "ดีเซล", color: "#16a34a" },
+    { key: "Gasohol 95 S EVO", label: "แก๊สโซฮอล์ 95", color: "#be123c" }
+  ];
+
+  const maxDate = allData.reduce((m,r)=>r.date>m?r.date:m, "0000-00-00");
+  const cutoff = new Date(maxDate);
+  cutoff.setMonth(cutoff.getMonth()-12);
+  const cutoffISO = cutoff.toISOString().slice(0,10);
+  const recent = allData.filter(r=>r.date >= cutoffISO);
+
+  const datasets = [];
+  const callouts = [];
+
+  EXEC_PRODUCTS.forEach(p=>{
+    const pts = recent.filter(r=>r.product===p.key).sort((a,b)=>a.date.localeCompare(b.date));
+    if(!pts.length) return;
+    datasets.push({
+      label: p.label,
+      data: pts.map(r=>({x:r.date, y:r.price})),
+      borderColor: p.color,
+      backgroundColor: "transparent",
+      borderWidth: 3,
+      pointRadius: 0,
+      tension: .25
+    });
+    const latest = pts[pts.length-1].price;
+    const yearAgo = pts[0].price;
+    const diff = latest - yearAgo;
+    const pct = yearAgo ? (diff/yearAgo*100) : 0;
+    const up = diff > 0;
+    callouts.push(`
+      <div class="exec-callout ${up?"high":"low"}">
+        <span class="cdot" style="background:${p.color}"></span>
+        <div>
+          <div class="clabel">${p.label} — ราคาล่าสุด</div>
+          <div class="cvalue">${latest.toFixed(2)} บาท/ลิตร
+            <span style="font-size:13px;font-weight:600;color:${up?"#dc2626":"#16a34a"}">
+              ${up?"▲":"▼"} ${Math.abs(pct).toFixed(1)}% ในรอบ 12 เดือน
+            </span>
+          </div>
+        </div>
+      </div>
+    `);
+  });
+
+  document.getElementById("execCallouts").innerHTML = callouts.join("");
+
+  if(execChart) execChart.destroy();
+  execChart = new Chart(document.getElementById("execChart"), {
+    type: "line",
+    data: { datasets },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:"index", intersect:false},
+      scales:{
+        x:{ type:"time", time:{unit:"month"}, grid:{display:false}, ticks:{font:{size:13}} },
+        y:{ grid:{color:"#f1f5f9"}, ticks:{font:{size:13}}, title:{display:true, text:"บาท/ลิตร"} }
+      },
+      plugins:{
+        legend:{ display:true, position:"top", labels:{font:{size:13, weight:600}, boxWidth:14} },
+        tooltip:{ callbacks:{ label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} บาท` } }
+      }
+    }
+  });
+}
+
+function renderSpreadChart(rows){
+  const byDate = new Map();
+  rows.forEach(r=>{
+    if(!byDate.has(r.date)) byDate.set(r.date, {});
+    byDate.get(r.date)[r.product] = r.price;
+  });
+
+  const dates = [...byDate.keys()].sort();
+  const dieselSpread = [];
+  const gasoholSpread = [];
+  dates.forEach(d=>{
+    const v = byDate.get(d);
+    if(v["Hi Diesel B20 S"] != null && v["Hi Diesel S"] != null){
+      dieselSpread.push({x:d, y:+(v["Hi Diesel S"] - v["Hi Diesel B20 S"]).toFixed(2)});
+    }
+    if(v["Gasohol 95 S EVO"] != null && v["Gasohol 91 S EVO"] != null){
+      gasoholSpread.push({x:d, y:+(v["Gasohol 95 S EVO"] - v["Gasohol 91 S EVO"]).toFixed(2)});
+    }
+  });
+
+  if(spreadChart) spreadChart.destroy();
+  spreadChart = new Chart(document.getElementById("spreadChart"), {
+    type: "line",
+    data: {
+      datasets: [
+        { label:"Diesel S − B20 S", data:dieselSpread, borderColor:"#16a34a", backgroundColor:"transparent", borderWidth:2, pointRadius:1, tension:.15 },
+        { label:"Gasohol 95 − 91", data:gasoholSpread, borderColor:"#7c3aed", backgroundColor:"transparent", borderWidth:2, pointRadius:1, tension:.15 }
+      ]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      interaction:{mode:"index", intersect:false},
+      scales:{
+        x:{type:"time", time:{unit:"month"}, grid:{display:false}},
+        y:{title:{display:true, text:"ส่วนต่าง (บาท/ลิตร)"}}
+      },
+      plugins:{
+        legend:{display:true, position:"bottom"},
+        tooltip:{callbacks:{label:(ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y.toFixed(2)} บาท`}}
+      }
+    }
+  });
+}
+
+function renderFreqChart(rows){
+  const target = rows.filter(r=>r.product === "Hi Diesel S");
+  const counts = new Map();
+  target.forEach(r=>{
+    const year = r.date.slice(0,4);
+    counts.set(year, (counts.get(year)||0) + 1);
+  });
+  const years = [...counts.keys()].sort();
+
+  if(freqChart) freqChart.destroy();
+  freqChart = new Chart(document.getElementById("freqChart"), {
+    type: "bar",
+    data: {
+      labels: years,
+      datasets: [{
+        label: "จำนวนครั้งที่ปรับราคา",
+        data: years.map(y=>counts.get(y)),
+        backgroundColor: "#0891b2",
+        borderRadius: 6
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{grid:{display:false}},
+        y:{title:{display:true, text:"จำนวนครั้ง"}, ticks:{precision:0}}
+      },
+      plugins:{ legend:{display:false} }
+    }
+  });
+}
+
+function renderTable(rows){
+  const sorted = [...rows].sort((a,b)=>b.date.localeCompare(a.date)).slice(0, 300);
+  dataTable.innerHTML = sorted.length ? sorted.map(r=>`
+    <tr>
+      <td>${r.date}</td>
+      <td>${PRODUCT_LABELS[r.product] || r.product}</td>
+      <td class="right">${r.price.toFixed(2)}</td>
+    </tr>
+  `).join("") : '<tr><td colspan="3" class="status">ไม่มีข้อมูลตามตัวกรองที่เลือก</td></tr>';
+}
+
+init();
+</script>
+</body>
+</html>

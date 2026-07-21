@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fuel Value Chain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: rgba(255, 255, 255, .05);
+      --panel-border: rgba(148, 163, 184, .2);
+      --text-hi: #e2e8f0;
+      --text-lo: #94a3b8;
+      --upstream: #38bdf8;
+      --intermediate: #a78bfa;
+      --downstream: #fbbf24;
+      --endcustomer: #34d399;
+      --domestic: #f97316;
+      --import: #06b6d4;
+      --export: #ef4444;
+      --local: #34d399;
+      --radius: 16px;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background:
+        radial-gradient(circle at 18% -10%, rgba(56, 189, 248, .13), transparent 38%),
+        radial-gradient(circle at 86% 6%, rgba(251, 191, 36, .11), transparent 28%),
+        var(--bg);
+      color: var(--text-hi);
+      font-family: "Prompt", sans-serif;
+    }
+
+    a {
+      color: inherit;
+      text-decoration: none
+    }
+
+    .page-header {
+      text-align: center;
+      padding: 34px 20px 8px
+    }
+
+    .eyebrow {
+      font-size: 12px;
+      color: var(--text-lo);
+      letter-spacing: 2px;
+      text-transform: uppercase
+    }
+
+    .page-header h1 {
+      font-size: clamp(24px, 4vw, 42px);
+      font-weight: 700;
+      margin: 8px 0 8px
+    }
+
+    .page-header p {
+      margin: 0;
+      color: var(--text-lo);
+      font-size: 14px
+    }
+
+    .chain-wrap {
+      padding: 26px 28px 58px;
+      overflow-x: auto
+    }
+
+    .flow-wrap {
+      position: relative;
+      min-width: 1180px;
+      max-width: 1500px;
+      margin: 0 auto
+    }
+
+    .section-title-row {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 64px;
+      margin-bottom: 14px
+    }
+
+    .section-title {
+      text-align: center;
+      font-size: 13px;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      font-weight: 600;
+      padding: 10px 0;
+      border-radius: 10px;
+      border: 1px solid var(--panel-border);
+      background: rgba(255, 255, 255, .035);
+    }
+
+    .section-title.upstream {
+      color: var(--upstream);
+      background: rgba(56, 189, 248, .14);
+      box-shadow: inset 0 0 0 1px rgba(56, 189, 248, .4)
+    }
+
+    .section-title.intermediate {
+      color: var(--intermediate);
+      background: rgba(167, 139, 250, .14);
+      box-shadow: inset 0 0 0 1px rgba(167, 139, 250, .4)
+    }
+
+    .section-title.downstream {
+      color: var(--downstream);
+      background: rgba(251, 191, 36, .14);
+      box-shadow: inset 0 0 0 1px rgba(251, 191, 36, .4)
+    }
+
+    .section-title.endcustomer {
+      color: var(--endcustomer);
+      background: rgba(52, 211, 153, .14);
+      box-shadow: inset 0 0 0 1px rgba(52, 211, 153, .4)
+    }
+
+    .flow-grid {
+      position: relative;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 64px;
+      min-height: 850px
+    }
+
+    .stage-col {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 20px;
+      position: relative;
+      z-index: 2;
+      padding-top: 20px
+    }
+
+    .group-label {
+      font-size: 22px;
+      text-align: center;
+      color: var(--text-hi);
+      font-weight: 700;
+      letter-spacing: .5px;
+      padding: 10px 0;
+      margin-bottom: 6px;
+    }
+
+    .group-divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--panel-border), transparent);
+      margin: 8px 0;
+    }
+
+    .legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px 22px;
+      margin: 14px auto 0;
+      max-width: 900px
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12.5px;
+      color: var(--text-lo)
+    }
+
+    .legend-dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 4px;
+      flex: 0 0 auto
+    }
+
+    .legend-item.upstream .legend-dot {
+      background: var(--upstream)
+    }
+
+    .legend-item.intermediate .legend-dot {
+      background: var(--intermediate)
+    }
+
+    .legend-item.downstream .legend-dot {
+      background: var(--downstream)
+    }
+
+    .legend-item.endcustomer .legend-dot {
+      background: var(--endcustomer)
+    }
+
+    .node {
+      background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02));
+      border: 1px solid var(--panel-border);
+      border-left: 4px solid var(--node-color, var(--upstream));
+      border-radius: var(--radius);
+      padding: 15px 16px;
+      position: relative;
+      backdrop-filter: blur(8px);
+      transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
+      opacity: 0;
+      transform: translateY(14px);
+      animation: fadeInUp .55s ease forwards;
+    }
+
+    /* Custom Spacing */
+    .node[data-id="I1"] {
+      margin-top: 160px;
+    }
+
+    .node[data-id="I2"] {
+      margin-top: 120px;
+      margin-left: calc(50% + 32px);
+      width: 100%;
+      position: relative;
+      z-index: 10;
+    }
+
+    .node[data-id="D1"] {
+      margin-top: 160px;
+    }
+
+    .node[data-id="E2"] {
+      margin-top: -5px;
+    }
+
+    @keyframes fadeInUp {
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .node:hover,
+    .node.link-node:focus-visible {
+      transform: scale(1.04) translateY(-2px);
+      box-shadow: 0 18px 38px -15px var(--node-glow, rgba(56, 189, 248, .5));
+      border-color: var(--node-color, var(--upstream));
+    }
+
+    .node.link-node {
+      cursor: pointer;
+      display: block;
+    }
+
+    .node.link-node .node-name {
+      color: var(--endcustomer);
+      text-decoration: underline;
+      text-underline-offset: 4px;
+    }
+
+    .node-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px
+    }
+
+    .node-name {
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.45;
+      transition: color .2s;
+      width: 100%;
+    }
+
+    .node-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex: 0 0 auto;
+      background: rgba(255, 255, 255, .06);
+      border: 1px solid var(--panel-border);
+    }
+
+    .node[data-stage=upstream] {
+      --node-color: var(--upstream);
+      --node-glow: rgba(56, 189, 248, .45);
+      background: linear-gradient(160deg, rgba(56, 189, 248, .12), rgba(56, 189, 248, .02))
+    }
+
+    .node[data-stage=intermediate] {
+      --node-color: var(--intermediate);
+      --node-glow: rgba(167, 139, 250, .45);
+      background: linear-gradient(160deg, rgba(167, 139, 250, .12), rgba(167, 139, 250, .02))
+    }
+
+    .node[data-stage=downstream] {
+      --node-color: var(--downstream);
+      --node-glow: rgba(251, 191, 36, .45);
+      background: linear-gradient(160deg, rgba(251, 191, 36, .12), rgba(251, 191, 36, .02))
+    }
+
+    .node[data-stage=endcustomer] {
+      --node-color: var(--endcustomer);
+      --node-glow: rgba(52, 211, 153, .45);
+      background: linear-gradient(160deg, rgba(52, 211, 153, .12), rgba(52, 211, 153, .02))
+    }
+
+    .node[data-stage=upstream] .node-icon {
+      background: rgba(56, 189, 248, .16);
+      border-color: rgba(56, 189, 248, .35);
+      color: var(--upstream)
+    }
+
+    .node[data-stage=intermediate] .node-icon {
+      background: rgba(167, 139, 250, .16);
+      border-color: rgba(167, 139, 250, .35);
+      color: var(--intermediate)
+    }
+
+    .node[data-stage=downstream] .node-icon {
+      background: rgba(251, 191, 36, .16);
+      border-color: rgba(251, 191, 36, .35);
+      color: var(--downstream)
+    }
+
+    .node[data-stage=endcustomer] .node-icon {
+      background: rgba(52, 211, 153, .16);
+      border-color: rgba(52, 211, 153, .35);
+      color: var(--endcustomer)
+    }
+
+    /* Sub-group coloring: domestic production vs. import (Upstream) */
+    .node[data-group="domestic"] {
+      --node-color: var(--domestic);
+      --node-glow: rgba(249, 115, 22, .45);
+      background: linear-gradient(160deg, rgba(249, 115, 22, .14), rgba(249, 115, 22, .02))
+    }
+
+    .node[data-group="import"] {
+      --node-color: var(--import);
+      --node-glow: rgba(6, 182, 212, .45);
+      background: linear-gradient(160deg, rgba(6, 182, 212, .14), rgba(6, 182, 212, .02))
+    }
+
+    .node[data-group="domestic"] .node-icon {
+      background: rgba(249, 115, 22, .18);
+      border-color: rgba(249, 115, 22, .4);
+      color: var(--domestic)
+    }
+
+    .node[data-group="import"] .node-icon {
+      background: rgba(6, 182, 212, .18);
+      border-color: rgba(6, 182, 212, .4);
+      color: var(--import)
+    }
+
+    /* Sub-group coloring: export abroad vs. domestic use (End Customer) */
+    .node[data-group="export"] {
+      --node-color: var(--export);
+      --node-glow: rgba(239, 68, 68, .45);
+      background: linear-gradient(160deg, rgba(239, 68, 68, .14), rgba(239, 68, 68, .02))
+    }
+
+    .node[data-group="local"] {
+      --node-color: var(--local);
+      --node-glow: rgba(52, 211, 153, .45);
+      background: linear-gradient(160deg, rgba(52, 211, 153, .12), rgba(52, 211, 153, .02))
+    }
+
+    .node[data-group="export"] .node-icon {
+      background: rgba(239, 68, 68, .18);
+      border-color: rgba(239, 68, 68, .4);
+      color: var(--export)
+    }
+
+    .node[data-group="local"] .node-icon {
+      background: rgba(52, 211, 153, .16);
+      border-color: rgba(52, 211, 153, .35);
+      color: var(--local)
+    }
+
+    /* Group label accents to match sub-group colors */
+    .group-label[data-group="domestic"] {
+      color: var(--domestic);
+    }
+
+    .group-label[data-group="import"] {
+      color: var(--import);
+    }
+
+    .group-label[data-group="export"] {
+      color: var(--export);
+    }
+
+    .group-label[data-group="local"] {
+      color: var(--local);
+    }
+
+    .flow-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      overflow: visible;
+      pointer-events: none
+    }
+
+    .flow-line {
+      fill: none;
+      stroke-width: 2.2;
+      stroke-linecap: round;
+      stroke-dasharray: 10 8;
+      animation: flowDash 6s linear infinite;
+      opacity: .86;
+    }
+
+    @keyframes flowDash {
+      to {
+        stroke-dashoffset: -180
+      }
+    }
+
+    /* Senior Mode */
+    .senior-toggle {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 1000;
+      height: 52px;
+      border-radius: 26px;
+      border: 2px solid rgba(56,189,248,.5);
+      background: rgba(15, 23, 42, .92);
+      backdrop-filter: blur(8px);
+      color: var(--upstream);
+      font-size: 15px;
+      font-family: "Prompt", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 18px 0 14px;
+      transition: all .25s ease;
+      box-shadow: 0 4px 24px rgba(56,189,248,.2);
+      animation: pulse-glow 2.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+      0%, 100% { box-shadow: 0 4px 24px rgba(56,189,248,.2); }
+      50% { box-shadow: 0 4px 32px rgba(56,189,248,.45); }
+    }
+
+    .senior-toggle:hover {
+      transform: scale(1.06);
+      border-color: var(--upstream);
+      box-shadow: 0 4px 28px rgba(56,189,248,.5);
+      animation: none;
+    }
+
+    .senior-toggle.active {
+      background: rgba(56,189,248,.15);
+      border-color: var(--upstream);
+      animation: none;
+    }
+
+    .senior-toggle .toggle-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    body.senior-mode .chain-wrap {
+      overflow-x: auto;
+    }
+
+    body.senior-mode .flow-wrap {
+      zoom: 1.25;
+    }
+
+    body.senior-mode .eyebrow { font-size: 16px; }
+    body.senior-mode .page-header h1 { font-size: clamp(32px, 5vw, 54px); }
+    body.senior-mode .page-header p { font-size: 18px; }
+    body.senior-mode .legend-item { font-size: 15px; }
+    body.senior-mode .legend-dot { width: 13px; height: 13px; }
+
+    @media(max-width:1024px) {
+      .chain-wrap {
+        padding: 20px 14px 50px
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header class="page-header">
+    <div class="eyebrow">Value Chain Overview</div>
+    <h1>Fuel Value Chain</h1>
+    <p>ห่วงโซ่อุปทานน้ำมันเชื้อเพลิง จากต้นน้ำสู่ผู้ใช้ปลายทาง</p>
+    <div class="legend">
+      <div class="legend-item upstream"><span class="legend-dot"></span>Upstream — แหล่งผลิต/นำเข้าน้ำมันดิบ</div>
+      <div class="legend-item intermediate"><span class="legend-dot"></span>Intermediate — โรงกลั่น/ส่วนผสม</div>
+      <div class="legend-item downstream"><span class="legend-dot"></span>Downstream — คลังน้ำมัน</div>
+      <div class="legend-item endcustomer"><span class="legend-dot"></span>End Customer — ผู้ใช้ปลายทาง</div>
+    </div>
+    <div class="legend" style="margin-top:8px">
+      <div class="legend-item" style="color:var(--domestic)"><span class="legend-dot"
+          style="background:var(--domestic)"></span>ผลิตในประเทศ</div>
+      <div class="legend-item" style="color:var(--import)"><span class="legend-dot"
+          style="background:var(--import)"></span>นำเข้าต่างประเทศ</div>
+      <div class="legend-item" style="color:var(--export)"><span class="legend-dot"
+          style="background:var(--export)"></span>ส่งออกต่างประเทศ</div>
+      <div class="legend-item" style="color:var(--local)"><span class="legend-dot"
+          style="background:var(--local)"></span>ใช้ในประเทศ</div>
+    </div>
+  </header>
+
+  <button class="senior-toggle" id="seniorToggle" title="โหมดตัวอักษรใหญ่ สำหรับผู้สูงอายุ"><span class="toggle-icon">👁️</span> ขยายตัวอักษร</button>
+
+  <main class="chain-wrap">
+    <section class="flow-wrap" aria-label="Fuel value chain">
+      <div class="section-title-row">
+        <div class="section-title upstream">Upstream</div>
+        <div class="section-title intermediate">Intermediate</div>
+        <div class="section-title downstream">Downstream</div>
+        <div class="section-title endcustomer">End Customer</div>
+      </div>
+
+      <svg class="flow-svg" id="flow-svg">
+        <defs>
+          <marker id="arrow-upstream" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#38bdf8"></path>
+          </marker>
+          <marker id="arrow-intermediate" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#a78bfa"></path>
+          </marker>
+          <marker id="arrow-downstream" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6"
+            orient="auto">
+            <path d="M0,0 L10,5 L0,10 Z" fill="#fbbf24"></path>
+          </marker>
+        </defs>
+      </svg>
+
+      <div class="flow-grid" id="flow-grid">
+        <div class="stage-col" id="col-upstream"></div>
+        <div class="stage-col" id="col-intermediate"></div>
+        <div class="stage-col" id="col-downstream"></div>
+        <div class="stage-col" id="col-endcustomer"></div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const STAGE_META = {
+      upstream: { color: "#38bdf8" },
+      intermediate: { color: "#a78bfa" },
+      downstream: { color: "#fbbf24" },
+      endcustomer: { color: "#34d399" }
+    };
+
+    // อัปเดตกล่อง I2 ให้จัดกึ่งกลาง (text-align: center)
+    const NODES = [
+      { id: "U1", name: "แหล่งผลิตน้ำมันดิบอ่าวไทย", stage: "upstream", group: "domestic", icon: "🛢️" },
+      { id: "U2", name: "แหล่งผลิตน้ำมันดิบบนบก", stage: "upstream", group: "domestic", icon: "🏗️" },
+      { id: "U3", name: "นำเข้าน้ำมันดิบ", stage: "upstream", group: "import", icon: "🚢" },
+      { id: "U4", name: "นำเข้าน้ำมันสำเร็จรูป", stage: "upstream", group: "import", icon: "📦" },
+      { id: "I1", name: "โรงกลั่นน้ำมัน", stage: "intermediate", icon: "🏭" },
+      { id: "I2", name: "<div style='text-align: center;'>เอทานอลหรือไบโอดีเซล<br>ที่เข้ามาผสม</div>", stage: "intermediate", icon: "🧪" },
+      { id: "D1", name: "คลังน้ำมันเชื้อเพลิง", stage: "downstream", icon: "🏬" },
+      { id: "E1", name: "ส่งออกน้ำมันดิบ", stage: "endcustomer", group: "export", icon: "🌍" },
+      { id: "E2", name: "ส่งออกน้ำมันสำเร็จรูป", stage: "endcustomer", group: "export", icon: "✈️" },
+      { id: "E3", name: "สถานีบริการน้ำมันเชื้อเพลิง", stage: "endcustomer", group: "local", icon: "⛽", link: "Companies.html" },
+      { id: "E4", name: "น้ำมันอากาศยาน", stage: "endcustomer", group: "local", icon: "🛫" },
+      { id: "E5", name: "โรงไฟฟ้า และ โรงงานอุตสาหกรรม", stage: "endcustomer", group: "local", icon: "⚡" },
+      { id: "E6", name: "กิจกรรมอื่นๆ", stage: "endcustomer", group: "local", icon: "🏭" }
+    ];
+
+    const CONNECTIONS = [
+      ["U1", "E1"],
+      ["U1", "I1"],
+      ["U2", "I1"],
+      ["U3", "I1"],
+      ["U4", "I1"],
+      ["U4", "D1"],
+      ["I1", "D1"],
+      ["I2", "I1"],
+      ["I2", "D1"],
+      ["D1", "E2"],
+      ["D1", "E3"],
+      ["D1", "E4"],
+      ["D1", "E5"],
+      ["D1", "E6"]
+    ];
+
+    const stageColEl = {
+      upstream: document.getElementById("col-upstream"),
+      intermediate: document.getElementById("col-intermediate"),
+      downstream: document.getElementById("col-downstream"),
+      endcustomer: document.getElementById("col-endcustomer")
+    };
+
+    NODES.forEach((node, index) => {
+      const isLink = !!node.link;
+      const el = document.createElement(isLink ? "a" : "div");
+      if (isLink) {
+        el.href = node.link;
+      }
+
+      el.className = "node" + (isLink ? " link-node" : "");
+      el.dataset.stage = node.stage;
+      el.dataset.id = node.id;
+      if (node.group) { el.dataset.group = node.group; }
+      el.style.animationDelay = `${index * .045}s`;
+      el.innerHTML = `
+    <div class="node-top">
+      <div style="flex-grow: 1;">
+        <div class="node-name">${node.name}</div>
+      </div>
+      <div class="node-icon">${node.icon}</div>
+    </div>`;
+      stageColEl[node.stage].appendChild(el);
+    });
+
+    function insertGroupLabel(beforeNodeId, text, group) {
+      const target = document.querySelector(`.node[data-id="${beforeNodeId}"]`);
+      const label = document.createElement("div");
+      label.className = "group-label";
+      if (group) { label.dataset.group = group; }
+      label.textContent = text;
+      target.parentNode.insertBefore(label, target);
+    }
+
+    function insertDivider(beforeNodeId) {
+      const target = document.querySelector(`.node[data-id="${beforeNodeId}"]`);
+      const divider = document.createElement("div");
+      divider.className = "group-divider";
+      target.parentNode.insertBefore(divider, target);
+    }
+
+    insertGroupLabel("U1", "ผลิตในประเทศ", "domestic");
+    insertDivider("U3");
+    insertGroupLabel("U3", "นำเข้าต่างประเทศ", "import");
+
+    insertGroupLabel("E1", "ส่งออกต่างประเทศ", "export");
+    insertDivider("E3");
+    insertGroupLabel("E3", "ใช้ในประเทศ", "local");
+
+    const svg = document.getElementById("flow-svg");
+    const flowWrap = document.querySelector(".flow-wrap");
+
+    function drawConnections() {
+      svg.querySelectorAll(".flow-line").forEach(el => el.remove());
+      const wrapRect = flowWrap.getBoundingClientRect();
+      svg.setAttribute("viewBox", `0 0 ${wrapRect.width} ${wrapRect.height}`);
+
+      const u1El = document.querySelector('.node[data-id="U1"]');
+      const u1Rect = u1El ? u1El.getBoundingClientRect() : null;
+      // เส้นรวมต้นน้ำ
+      const upstreamMergeX = u1Rect ? u1Rect.right - wrapRect.left + 32 : 0;
+
+      CONNECTIONS.forEach(([fromId, toId]) => {
+        const fromEl = document.querySelector(`.node[data-id="${fromId}"]`);
+        const toEl = document.querySelector(`.node[data-id="${toId}"]`);
+        if (!fromEl || !toEl) return;
+
+        const fr = fromEl.getBoundingClientRect();
+        const tr = toEl.getBoundingClientRect();
+
+        let x1 = fr.right - wrapRect.left;
+        let y1 = fr.top - wrapRect.top + fr.height / 2;
+        let x2 = tr.left - wrapRect.left;
+        let y2 = tr.top - wrapRect.top + tr.height / 2;
+
+        let d = "";
+
+        // จัดการการลากเส้น U1, U2, U3 ให้มารวมกันที่เส้นแกนตั้งก่อนเข้า I1
+        if (toId === "I1" && ["U1", "U2", "U3"].includes(fromId)) {
+          d = `M ${x1} ${y1} L ${upstreamMergeX} ${y1} L ${upstreamMergeX} ${y2} L ${x2} ${y2}`;
+        }
+        // D1 กระจายเส้นออกแบบ Fork ให้ปลายทางทั้งหมด (E2 ถึง E6)
+        else if (fromId === "D1" && ["E2", "E3", "E4", "E5", "E6"].includes(toId)) {
+          const forkX = x1 + 32;
+          d = `M ${x1} ${y1} L ${forkX} ${y1} L ${forkX} ${y2} L ${x2} ${y2}`;
+        }
+        // I2 -> I1 (ขึ้นไปด้านล่างโรงกลั่น - ชิดขวา)
+        else if (fromId === "I2" && toId === "I1") {
+          x1 = fr.left + (fr.width * 0.25) - wrapRect.left;
+          y1 = fr.top - wrapRect.top;
+          x2 = tr.left + (tr.width * 0.75) - wrapRect.left;
+          y2 = tr.bottom - wrapRect.top;
+          const turnY = y1 - 25;
+          d = `M ${x1} ${y1} L ${x1} ${turnY} L ${x2} ${turnY} L ${x2} ${y2}`;
+        }
+        // I2 -> D1 (ขึ้นไปด้านล่างคลังน้ำมัน - ชิดซ้าย)
+        else if (fromId === "I2" && toId === "D1") {
+          x1 = fr.left + (fr.width * 0.75) - wrapRect.left;
+          y1 = fr.top - wrapRect.top;
+          x2 = tr.left + (tr.width * 0.25) - wrapRect.left;
+          y2 = tr.bottom - wrapRect.top;
+          const turnY = y1 - 25;
+          d = `M ${x1} ${y1} L ${x1} ${turnY} L ${x2} ${turnY} L ${x2} ${y2}`;
+        }
+        // U1 -> E1 ออกด้านบน
+        else if (fromId === "U1" && toId === "E1") {
+          const lineY = Math.min(y1, y2) - 18;
+
+          d = `M ${x1} ${lineY}
+         L ${x2} ${lineY}`;
+        }
+        // U4 -> I1 วิ่งแนวนอนแล้วเลี้ยวขึ้นเข้าใต้โรงกลั่น (ชิดซ้าย จะได้ไม่ทับ I2)
+        else if (fromId === "U4" && toId === "I1") {
+          x2 = tr.left + (tr.width * 0.25) - wrapRect.left;
+          y2 = tr.bottom - wrapRect.top;
+          d = `M ${x1} ${y1} L ${x2} ${y1} L ${x2} ${y2}`;
+        }
+        // U4 -> D1 วิ่งแนวนอนไปสุด แล้วเลี้ยวขึ้นเข้าใต้คลังน้ำมัน (ชิดขวา)
+        else if (fromId === "U4" && toId === "D1") {
+          x2 = tr.left + (tr.width * 0.75) - wrapRect.left;
+          y2 = tr.bottom - wrapRect.top;
+
+          const lowerY = y1 + 20; // ปรับ 20 เป็น 30, 40 ได้
+          d = `M ${x1} ${y1}
+         L ${x1} ${lowerY}
+         L ${x2} ${lowerY}
+         L ${x2} ${y2}`;
+        }
+        else {
+          const midX = x1 + (x2 - x1) / 2;
+          d = Math.abs(y1 - y2) < 5 ? `M ${x1} ${y1} L ${x2} ${y2}` : `M ${x1} ${y1} L ${midX} ${y1} L ${midX} ${y2} L ${x2} ${y2}`;
+        }
+
+        const stage = NODES.find(n => n.id === fromId).stage;
+        const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        path.setAttribute("d", d);
+        path.setAttribute("class", "flow-line");
+        path.setAttribute("stroke", STAGE_META[stage].color);
+        path.setAttribute("marker-end", `url(#arrow-${stage})`);
+        svg.appendChild(path);
+      });
+    }
+
+    window.addEventListener("load", drawConnections);
+    window.addEventListener("resize", () => requestAnimationFrame(drawConnections));
+    setTimeout(drawConnections, 150);
+
+    const seniorToggle = document.getElementById("seniorToggle");
+    seniorToggle.addEventListener("click", () => {
+      document.body.classList.toggle("senior-mode");
+      seniorToggle.classList.toggle("active");
+      const active = document.body.classList.contains("senior-mode");
+      seniorToggle.innerHTML = active
+        ? '<span class="toggle-icon">👁️‍🗨️</span> ตัวอักษรปกติ'
+        : '<span class="toggle-icon">👁️</span> ขยายตัวอักษร';
+      setTimeout(drawConnections, 50);
+    });
+  </script>
+</body>
+
+</html>
