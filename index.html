@@ -10,6 +10,17 @@
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <style>
     :root {
+      --scale: 1;
+      --fs-eyebrow: 14px;
+      --fs-h1: clamp(28px, 4.6vw, 50px);
+      --fs-p: 16px;
+      --fs-section-title: clamp(13px, 1.3vw, 18px);
+      --fs-group-label: clamp(26px, 3vw, 40px);
+      --fs-legend: clamp(12px, 1.15vw, 15px);
+      --sz-legend-dot: 13px;
+      --fs-node: clamp(15px, 1.55vw, 21px);
+      --fs-icon: clamp(16px, 1.7vw, 22px);
+      --sz-icon: clamp(30px, 3vw, 42px);
       --bg: #0f172a;
       --panel: rgba(255, 255, 255, .05);
       --panel-border: rgba(148, 163, 184, .2);
@@ -49,18 +60,18 @@
 
     .page-header {
       text-align: center;
-      padding: 34px 20px 8px
+      padding: 18px 20px 6px
     }
 
     .eyebrow {
-      font-size: 12px;
+      font-size: calc(var(--fs-eyebrow) * var(--scale));
       color: var(--text-lo);
       letter-spacing: 2px;
       text-transform: uppercase
     }
 
     .page-header h1 {
-      font-size: clamp(24px, 4vw, 42px);
+      font-size: calc(var(--fs-h1) * var(--scale));
       font-weight: 700;
       margin: 8px 0 8px
     }
@@ -68,36 +79,36 @@
     .page-header p {
       margin: 0;
       color: var(--text-lo);
-      font-size: 14px
+      font-size: calc(var(--fs-p) * var(--scale))
     }
 
     .chain-wrap {
-      padding: 26px 28px 58px;
-      overflow-x: auto
+      padding: 20px 16px 30px;
+      overflow-x: hidden
     }
 
     .flow-wrap {
       position: relative;
-      min-width: 1180px;
-      max-width: 1500px;
+      width: 100%;
+      max-width: 1900px;
       margin: 0 auto
     }
 
     .section-title-row {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 64px;
+      gap: clamp(30px, 2.6vw, 48px);
       margin-bottom: 14px
     }
 
     .section-title {
       text-align: center;
-      font-size: 13px;
+      font-size: calc(var(--fs-section-title) * var(--scale));
       letter-spacing: 1.2px;
       text-transform: uppercase;
       font-weight: 600;
-      padding: 10px 0;
-      border-radius: 10px;
+      padding: 10px 4px;
+      border-radius: 12px;
       border: 1px solid var(--panel-border);
       background: rgba(255, 255, 255, .035);
     }
@@ -130,28 +141,28 @@
       position: relative;
       display: grid;
       grid-template-columns: repeat(4, 1fr);
-      gap: 64px;
-      min-height: 850px
+      gap: clamp(30px, 2.6vw, 48px);
+      min-height: 700px
     }
 
     .stage-col {
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
-      gap: 20px;
+      gap: clamp(10px, 1.6vw, 22px);
       position: relative;
       z-index: 2;
-      padding-top: 20px
+      padding-top: 16px
     }
 
     .group-label {
-      font-size: 22px;
+      font-size: calc(var(--fs-group-label) * var(--scale));
       text-align: center;
       color: var(--text-hi);
       font-weight: 700;
       letter-spacing: .5px;
-      padding: 10px 0;
-      margin-bottom: 6px;
+      padding: 8px 0;
+      margin-bottom: 4px;
     }
 
     .group-divider {
@@ -173,13 +184,13 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 12.5px;
+      font-size: calc(var(--fs-legend) * var(--scale));
       color: var(--text-lo)
     }
 
     .legend-dot {
-      width: 11px;
-      height: 11px;
+      width: calc(var(--sz-legend-dot) * var(--scale));
+      height: calc(var(--sz-legend-dot) * var(--scale));
       border-radius: 4px;
       flex: 0 0 auto
     }
@@ -203,9 +214,9 @@
     .node {
       background: linear-gradient(160deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, .02));
       border: 1px solid var(--panel-border);
-      border-left: 4px solid var(--node-color, var(--upstream));
+      border-left: 5px solid var(--node-color, var(--upstream));
       border-radius: var(--radius);
-      padding: 15px 16px;
+      padding: calc(clamp(10px, 1.2vw, 18px) * var(--scale)) calc(clamp(10px, 1.4vw, 18px) * var(--scale));
       position: relative;
       backdrop-filter: blur(8px);
       transition: transform .22s ease, box-shadow .22s ease, border-color .22s ease, background .22s ease;
@@ -216,11 +227,11 @@
 
     /* Custom Spacing */
     .node[data-id="I1"] {
-      margin-top: 160px;
+      margin-top: calc(160px * var(--scale));
     }
 
     .node[data-id="I2"] {
-      margin-top: 120px;
+      margin-top: calc(120px * var(--scale));
       margin-left: calc(50% + 32px);
       width: 100%;
       position: relative;
@@ -228,11 +239,11 @@
     }
 
     .node[data-id="D1"] {
-      margin-top: 160px;
+      margin-top: calc(160px * var(--scale));
     }
 
     .node[data-id="E2"] {
-      margin-top: -5px;
+      margin-top: calc(-5px * var(--scale));
     }
 
     @keyframes fadeInUp {
@@ -268,21 +279,21 @@
     }
 
     .node-name {
-      font-size: 14px;
+      font-size: calc(var(--fs-node) * var(--scale));
       font-weight: 500;
-      line-height: 1.45;
+      line-height: 1.4;
       transition: color .2s;
       width: 100%;
     }
 
     .node-icon {
-      width: 34px;
-      height: 34px;
-      border-radius: 10px;
+      width: calc(var(--sz-icon) * var(--scale));
+      height: calc(var(--sz-icon) * var(--scale));
+      border-radius: 12px;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
+      font-size: calc(var(--fs-icon) * var(--scale));
       flex: 0 0 auto;
       background: rgba(255, 255, 255, .06);
       border: 1px solid var(--panel-border);
@@ -397,6 +408,9 @@
 
     .group-label[data-group="export"] {
       color: var(--export);
+      white-space: nowrap;
+      position: relative;
+      left: -18px;
     }
 
     .group-label[data-group="local"] {
@@ -428,28 +442,22 @@
       }
     }
 
-    /* Senior Mode */
-    .senior-toggle {
+    /* Text Size Control */
+    .text-size-control {
       position: fixed;
-      bottom: 24px;
+      top: 20px;
       right: 24px;
       z-index: 1000;
-      height: 52px;
-      border-radius: 26px;
-      border: 2px solid rgba(56,189,248,.5);
-      background: rgba(15, 23, 42, .92);
-      backdrop-filter: blur(8px);
-      color: var(--upstream);
-      font-size: 15px;
-      font-family: "Prompt", sans-serif;
-      font-weight: 600;
-      cursor: pointer;
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 0 18px 0 14px;
-      transition: all .25s ease;
-      box-shadow: 0 4px 24px rgba(56,189,248,.2);
+      gap: 4px;
+      height: 52px;
+      border-radius: 26px;
+      border: 2px solid rgba(56,189,248,.6);
+      background: rgba(15, 23, 42, .95);
+      backdrop-filter: blur(8px);
+      padding: 6px;
+      box-shadow: 0 4px 24px rgba(56,189,248,.3);
       animation: pulse-glow 2.5s ease-in-out infinite;
     }
 
@@ -458,37 +466,41 @@
       50% { box-shadow: 0 4px 32px rgba(56,189,248,.45); }
     }
 
-    .senior-toggle:hover {
-      transform: scale(1.06);
-      border-color: var(--upstream);
+    .text-size-control:hover {
+      animation: none;
       box-shadow: 0 4px 28px rgba(56,189,248,.5);
-      animation: none;
     }
 
-    .senior-toggle.active {
-      background: rgba(56,189,248,.15);
-      border-color: var(--upstream);
-      animation: none;
+    .size-btn {
+      border: none;
+      background: transparent;
+      color: var(--text-lo);
+      font-family: "Prompt", sans-serif;
+      font-weight: 600;
+      cursor: pointer;
+      border-radius: 20px;
+      padding: 0 14px;
+      height: 100%;
+      transition: all .2s ease;
     }
 
-    .senior-toggle .toggle-icon {
-      font-size: 22px;
-      line-height: 1;
+    .size-btn[data-size="small"] { font-size: 12px; }
+    .size-btn[data-size="medium"] { font-size: 15px; }
+    .size-btn[data-size="large"] { font-size: 18px; }
+
+    .size-btn:hover {
+      color: var(--text-hi);
     }
 
-    body.senior-mode .chain-wrap {
-      overflow-x: auto;
+    .size-btn.active {
+      background: rgba(56,189,248,.18);
+      color: var(--upstream);
+      box-shadow: inset 0 0 0 1px rgba(56,189,248,.5);
     }
 
-    body.senior-mode .flow-wrap {
-      zoom: 1.25;
-    }
-
-    body.senior-mode .eyebrow { font-size: 16px; }
-    body.senior-mode .page-header h1 { font-size: clamp(32px, 5vw, 54px); }
-    body.senior-mode .page-header p { font-size: 18px; }
-    body.senior-mode .legend-item { font-size: 15px; }
-    body.senior-mode .legend-dot { width: 13px; height: 13px; }
+    body.text-size-small { --scale: 0.82; }
+    body.text-size-medium { --scale: 1; }
+    body.text-size-large { --scale: 1.35; }
 
     @media(max-width:1024px) {
       .chain-wrap {
@@ -498,18 +510,12 @@
   </style>
 </head>
 
-<body>
+<body class="text-size-medium">
   <header class="page-header">
     <div class="eyebrow">Value Chain Overview</div>
     <h1>Fuel Value Chain</h1>
     <p>ห่วงโซ่อุปทานน้ำมันเชื้อเพลิง จากต้นน้ำสู่ผู้ใช้ปลายทาง</p>
     <div class="legend">
-      <div class="legend-item upstream"><span class="legend-dot"></span>Upstream — แหล่งผลิต/นำเข้าน้ำมันดิบ</div>
-      <div class="legend-item intermediate"><span class="legend-dot"></span>Intermediate — โรงกลั่น/ส่วนผสม</div>
-      <div class="legend-item downstream"><span class="legend-dot"></span>Downstream — คลังน้ำมัน</div>
-      <div class="legend-item endcustomer"><span class="legend-dot"></span>End Customer — ผู้ใช้ปลายทาง</div>
-    </div>
-    <div class="legend" style="margin-top:8px">
       <div class="legend-item" style="color:var(--domestic)"><span class="legend-dot"
           style="background:var(--domestic)"></span>ผลิตในประเทศ</div>
       <div class="legend-item" style="color:var(--import)"><span class="legend-dot"
@@ -521,7 +527,11 @@
     </div>
   </header>
 
-  <button class="senior-toggle" id="seniorToggle" title="โหมดตัวอักษรใหญ่ สำหรับผู้สูงอายุ"><span class="toggle-icon">👁️</span> ขยายตัวอักษร</button>
+  <div class="text-size-control" id="textSizeControl" title="ปรับขนาดตัวอักษร">
+    <button class="size-btn" data-size="small">เล็ก</button>
+    <button class="size-btn active" data-size="medium">กลาง</button>
+    <button class="size-btn" data-size="large">ใหญ่</button>
+  </div>
 
   <main class="chain-wrap">
     <section class="flow-wrap" aria-label="Fuel value chain">
@@ -664,7 +674,7 @@
       const u1El = document.querySelector('.node[data-id="U1"]');
       const u1Rect = u1El ? u1El.getBoundingClientRect() : null;
       // เส้นรวมต้นน้ำ
-      const upstreamMergeX = u1Rect ? u1Rect.right - wrapRect.left + 32 : 0;
+      const upstreamMergeX = u1Rect ? u1Rect.right - wrapRect.left + 18 : 0;
 
       CONNECTIONS.forEach(([fromId, toId]) => {
         const fromEl = document.querySelector(`.node[data-id="${fromId}"]`);
@@ -687,7 +697,7 @@
         }
         // D1 กระจายเส้นออกแบบ Fork ให้ปลายทางทั้งหมด (E2 ถึง E6)
         else if (fromId === "D1" && ["E2", "E3", "E4", "E5", "E6"].includes(toId)) {
-          const forkX = x1 + 32;
+          const forkX = x1 + 18;
           d = `M ${x1} ${y1} L ${forkX} ${y1} L ${forkX} ${y2} L ${x2} ${y2}`;
         }
         // I2 -> I1 (ขึ้นไปด้านล่างโรงกลั่น - ชิดขวา)
@@ -696,7 +706,7 @@
           y1 = fr.top - wrapRect.top;
           x2 = tr.left + (tr.width * 0.75) - wrapRect.left;
           y2 = tr.bottom - wrapRect.top;
-          const turnY = y1 - 25;
+          const turnY = y1 - 16;
           d = `M ${x1} ${y1} L ${x1} ${turnY} L ${x2} ${turnY} L ${x2} ${y2}`;
         }
         // I2 -> D1 (ขึ้นไปด้านล่างคลังน้ำมัน - ชิดซ้าย)
@@ -705,15 +715,12 @@
           y1 = fr.top - wrapRect.top;
           x2 = tr.left + (tr.width * 0.25) - wrapRect.left;
           y2 = tr.bottom - wrapRect.top;
-          const turnY = y1 - 25;
+          const turnY = y1 - 16;
           d = `M ${x1} ${y1} L ${x1} ${turnY} L ${x2} ${turnY} L ${x2} ${y2}`;
         }
-        // U1 -> E1 ออกด้านบน
+        // U1 -> E1 เส้นตรงเส้นเดียว
         else if (fromId === "U1" && toId === "E1") {
-          const lineY = Math.min(y1, y2) - 18;
-
-          d = `M ${x1} ${lineY}
-         L ${x2} ${lineY}`;
+          d = `M ${x1} ${y1} L ${x2} ${y2}`;
         }
         // U4 -> I1 วิ่งแนวนอนแล้วเลี้ยวขึ้นเข้าใต้โรงกลั่น (ชิดซ้าย จะได้ไม่ทับ I2)
         else if (fromId === "U4" && toId === "I1") {
@@ -726,7 +733,7 @@
           x2 = tr.left + (tr.width * 0.75) - wrapRect.left;
           y2 = tr.bottom - wrapRect.top;
 
-          const lowerY = y1 + 20; // ปรับ 20 เป็น 30, 40 ได้
+          const lowerY = y1 + 14; // ปรับ 20 เป็น 30, 40 ได้
           d = `M ${x1} ${y1}
          L ${x1} ${lowerY}
          L ${x2} ${lowerY}
@@ -751,15 +758,15 @@
     window.addEventListener("resize", () => requestAnimationFrame(drawConnections));
     setTimeout(drawConnections, 150);
 
-    const seniorToggle = document.getElementById("seniorToggle");
-    seniorToggle.addEventListener("click", () => {
-      document.body.classList.toggle("senior-mode");
-      seniorToggle.classList.toggle("active");
-      const active = document.body.classList.contains("senior-mode");
-      seniorToggle.innerHTML = active
-        ? '<span class="toggle-icon">👁️‍🗨️</span> ตัวอักษรปกติ'
-        : '<span class="toggle-icon">👁️</span> ขยายตัวอักษร';
-      setTimeout(drawConnections, 50);
+    const sizeButtons = document.querySelectorAll(".size-btn");
+    sizeButtons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const size = btn.dataset.size;
+        document.body.classList.remove("text-size-small", "text-size-medium", "text-size-large");
+        document.body.classList.add(`text-size-${size}`);
+        sizeButtons.forEach(b => b.classList.toggle("active", b === btn));
+        setTimeout(drawConnections, 50);
+      });
     });
   </script>
 </body>
